@@ -2,76 +2,80 @@ import { useState } from 'react'
 import { useCartStore, formatPrice } from '../../store/cartStore'
 import { showToast } from '../Toast'
 import type { Product } from '../../types'
-import { CATEGORY_IMAGES } from '../../data/categoryImages'
 
-interface Props {
-  product: Product
-}
+interface Props { product: Product }
 
 export default function ProductCard({ product: p }: Props) {
   const add = useCartStore((s) => s.add)
-  const [added, setAdded] = useState(false)
+  const [added, setAdded]   = useState(false)
   const [wished, setWished] = useState(false)
 
   const handleAdd = () => {
     add(p)
     showToast('✅', 'Added to Cart', p.name)
     setAdded(true)
-    setTimeout(() => setAdded(false), 1400)
+    setTimeout(() => setAdded(false), 1500)
   }
 
-  const stars = '★'.repeat(Math.floor(p.rating)) + '☆'.repeat(5 - Math.floor(p.rating))
+  const discount = p.oldPrice
+    ? Math.round((1 - p.price / p.oldPrice) * 100)
+    : null
+
+  const stars = Array.from({ length: 5 }, (_, i) => i < Math.floor(p.rating) ? '★' : '☆').join('')
 
   return (
-    <div className="product-card">
-      <div className="product-image">
-        <div
-          className="product-img-bg"
-          style={{ backgroundImage: `linear-gradient(180deg, rgba(10,10,14,0.45) 0%, rgba(10,10,14,0.08) 32%, rgba(10,10,14,0.15) 60%, rgba(10,10,14,0.9) 100%), url(${CATEGORY_IMAGES[p.category]})` }}
+    <div className="pc-card">
+      {/* Image area */}
+      <div className="pc-image">
+        <img
+          src={p.imageUrl}
+          alt={p.name}
+          className="pc-img"
+          loading="lazy"
+          onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3' }}
         />
-        <div className="product-img-icon">{p.icon}</div>
 
-        {p.badge && (
-          <div className="product-badge-wrap">
-            <span className={`badge ${p.badgeClass}`}>{p.badge}</span>
-          </div>
-        )}
+        {/* Badges */}
+        <div className="pc-badges">
+          {p.badge && <span className={`pc-badge ${p.badgeClass ?? ''}`}>{p.badge}</span>}
+          {discount && <span className="pc-badge pc-badge-discount">-{discount}%</span>}
+        </div>
 
+        {/* Wishlist */}
         <button
-          className="product-wishlist"
-          onClick={() => setWished((v) => !v)}
-          title={wished ? 'Remove from wishlist' : 'Add to wishlist'}
-          style={{ color: wished ? 'var(--danger)' : undefined }}
+          className={`pc-wishlist${wished ? ' wished' : ''}`}
+          onClick={(e) => { e.stopPropagation(); setWished((v) => !v) }}
+          aria-label="Wishlist"
         >
-          {wished ? '❤️' : '♡'}
+          {wished ? '♥' : '♡'}
         </button>
+
+        {/* Stock status */}
+        {!p.inStock && <div className="pc-out-of-stock">Out of Stock</div>}
       </div>
 
-      <div className="product-info">
-        <div className="product-cat-label">{p.categoryLabel}</div>
-        <div className="product-name">{p.name}</div>
-        <div className="product-desc">{p.desc}</div>
+      {/* Info area */}
+      <div className="pc-body">
+        <div className="pc-category">{p.categoryLabel}</div>
+        <div className="pc-name">{p.name}</div>
 
-        <div className="product-rating">
-          {stars}
-          <span>{p.rating} ({p.reviews} reviews)</span>
+        <div className="pc-rating">
+          <span className="pc-stars">{stars}</span>
+          <span className="pc-rating-count">({p.reviews})</span>
         </div>
 
-        <div className="product-footer">
-          <div>
-            <div className="product-price">{formatPrice(p.price)}</div>
-            {p.oldPrice && (
-              <div className="product-old-price">{formatPrice(p.oldPrice)}</div>
-            )}
-          </div>
-
-          <button
-            className={`add-cart-btn${added ? ' added' : ''}`}
-            onClick={handleAdd}
-          >
-            {added ? '✓ Added!' : '🛒 Add to Cart'}
-          </button>
+        <div className="pc-pricing">
+          <span className="pc-price">{formatPrice(p.price)}</span>
+          {p.oldPrice && <span className="pc-old-price">{formatPrice(p.oldPrice)}</span>}
         </div>
+
+        <button
+          className={`pc-add-btn${added ? ' added' : ''}${!p.inStock ? ' disabled' : ''}`}
+          onClick={handleAdd}
+          disabled={!p.inStock}
+        >
+          {added ? '✓ Added to Cart' : '+ Add to Cart'}
+        </button>
       </div>
     </div>
   )

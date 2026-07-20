@@ -9,6 +9,7 @@ import Checkout from './pages/Checkout'
 import Construction from './pages/Construction'
 import SecurityServices from './pages/SecurityServices'
 import Gas from './pages/Gas'
+import { useThemeStore } from './store/themeStore'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -17,6 +18,9 @@ function ScrollToTop() {
 }
 
 function Layout() {
+  const apply = useThemeStore((s) => s.apply)
+  useEffect(() => { apply() }, [apply])
+
   return (
     <>
       <PageLoader />

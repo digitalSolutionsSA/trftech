@@ -6,6 +6,7 @@ export interface Product {
   price: number
   oldPrice: number | null
   icon: string
+  imageUrl: string
   gradient: string
   rating: number
   reviews: number
