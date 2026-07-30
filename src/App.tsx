@@ -9,6 +9,9 @@ import Checkout from './pages/Checkout'
 import Construction from './pages/Construction'
 import SecurityServices from './pages/SecurityServices'
 import Gas from './pages/Gas'
+import AdminLogin from './pages/admin/AdminLogin'
+import AdminProducts from './pages/admin/AdminProducts'
+import ProtectedRoute from './components/admin/ProtectedRoute'
 import { useThemeStore } from './store/themeStore'
 
 function ScrollToTop() {
@@ -39,10 +42,22 @@ function Layout() {
   )
 }
 
+function AdminLayout() {
+  return (
+    <Routes>
+      <Route path="/"         element={<AdminLogin />} />
+      <Route path="/products" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
+    </Routes>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <Layout />
+      <Routes>
+        <Route path="/admin/*" element={<AdminLayout />} />
+        <Route path="/*"       element={<Layout />} />
+      </Routes>
     </BrowserRouter>
   )
 }

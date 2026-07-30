@@ -1,24 +1,26 @@
 import { useRef, useState } from 'react'
 import gsap from 'gsap'
 import ProductCard from '../ProductCard'
-import { PRODUCTS } from '../../data/products'
-import type { Product } from '../../types'
+import { usePublicProducts } from '../../hooks/useProducts'
 
-type FilterKey = 'all' | Product['category']
+type FilterKey = 'all' | 'gate-motors' | 'cameras' | 'electric-fencing' | 'alarm-systems'
 
 const FILTERS: { key: FilterKey; label: string; icon: string }[] = [
-  { key: 'all',              label: 'All Products',    icon: '🛍️' },
-  { key: 'gate-motors',      label: 'Gate Motors',     icon: '⚙️' },
-  { key: 'cameras',          label: 'CCTV Cameras',    icon: '📷' },
-  { key: 'electric-fencing', label: 'Electric Fencing',icon: '⚡' },
-  { key: 'alarm-systems',    label: 'Alarm Systems',   icon: '🔔' },
+  { key: 'all',               label: 'All Products',    icon: '🛍️' },
+  { key: 'gate-motors',       label: 'Gate Motors',     icon: '⚙️' },
+  { key: 'cameras',           label: 'CCTV Cameras',    icon: '📷' },
+  { key: 'electric-fencing',  label: 'Electric Fencing',icon: '⚡' },
+  { key: 'alarm-systems',     label: 'Alarm Systems',   icon: '🔔' },
 ]
 
 export default function ProductsSection() {
   const [active, setActive] = useState<FilterKey>('all')
   const gridRef = useRef<HTMLDivElement>(null)
+  const { products, loading } = usePublicProducts()
 
-  const filtered = active === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.category === active)
+  const filtered = active === 'all'
+    ? products
+    : products.filter((p) => p.categories?.slug === active)
 
   const handleFilter = (key: FilterKey) => {
     if (!gridRef.current) { setActive(key); return }
@@ -36,17 +38,16 @@ export default function ProductsSection() {
   }
 
   const counts: Record<FilterKey, number> = {
-    all:              PRODUCTS.length,
-    'gate-motors':    PRODUCTS.filter((p) => p.category === 'gate-motors').length,
-    cameras:          PRODUCTS.filter((p) => p.category === 'cameras').length,
-    'electric-fencing': PRODUCTS.filter((p) => p.category === 'electric-fencing').length,
-    'alarm-systems':  PRODUCTS.filter((p) => p.category === 'alarm-systems').length,
+    all:               products.length,
+    'gate-motors':     products.filter((p) => p.categories?.slug === 'gate-motors').length,
+    cameras:           products.filter((p) => p.categories?.slug === 'cameras').length,
+    'electric-fencing':products.filter((p) => p.categories?.slug === 'electric-fencing').length,
+    'alarm-systems':   products.filter((p) => p.categories?.slug === 'alarm-systems').length,
   }
 
   return (
     <section id="products" className="products-section">
       <div className="container">
-        {/* Section header */}
         <div className="ps-header">
           <div>
             <div className="section-label">Shop Online</div>
@@ -59,7 +60,6 @@ export default function ProductsSection() {
         </div>
 
         <div className="ps-layout">
-          {/* Sidebar */}
           <aside className="ps-sidebar">
             <div className="ps-sidebar-title">Categories</div>
             <ul className="ps-cat-list">
@@ -96,9 +96,7 @@ export default function ProductsSection() {
             </div>
           </aside>
 
-          {/* Product grid */}
           <div className="ps-main">
-            {/* Mobile filter pills */}
             <div className="ps-filter-pills">
               {FILTERS.map((f) => (
                 <button
@@ -111,9 +109,19 @@ export default function ProductsSection() {
               ))}
             </div>
 
-            <div className="pc-grid" ref={gridRef}>
-              {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
-            </div>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '4rem', color: 'rgba(255,255,255,0.3)' }}>
+                Loading products…
+              </div>
+            ) : filtered.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '4rem', color: 'rgba(255,255,255,0.3)' }}>
+                No products in this category yet.
+              </div>
+            ) : (
+              <div className="pc-grid" ref={gridRef}>
+                {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
+              </div>
+            )}
           </div>
         </div>
       </div>
