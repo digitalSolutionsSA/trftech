@@ -8,9 +8,9 @@ type FilterKey = 'all' | 'gate-motors' | 'cameras' | 'electric-fencing' | 'alarm
 const FILTERS: { key: FilterKey; label: string; icon: string }[] = [
   { key: 'all',               label: 'All Products',    icon: '🛍️' },
   { key: 'gate-motors',       label: 'Gate Motors',     icon: '⚙️' },
-  { key: 'cameras',           label: 'CCTV Cameras',    icon: '📷' },
-  { key: 'electric-fencing',  label: 'Electric Fencing',icon: '⚡' },
-  { key: 'alarm-systems',     label: 'Alarm Systems',   icon: '🔔' },
+  { key: 'cameras',           label: 'CCTV',            icon: '📷' },
+  { key: 'electric-fencing',  label: 'Construction',    icon: '⚡' },
+  { key: 'alarm-systems',     label: 'Security',        icon: '🔔' },
 ]
 
 export default function ProductsSection() {
