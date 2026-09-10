@@ -95,5 +95,7 @@ INSERT INTO categories (name, slug, sort_order) VALUES
   ('Gate Motors',       'gate-motors',     1),
   ('Cameras',           'cameras',         2),
   ('Electric Fencing',  'electric-fencing',3),
-  ('Alarm Systems',     'alarm-systems',   4)
+  ('Alarm Systems',     'alarm-systems',   4),
+  ('Networking',        'networking',      5),
+  ('Construction',      'construction',    6)
 ON CONFLICT (slug) DO NOTHING;

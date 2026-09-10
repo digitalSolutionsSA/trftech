@@ -3,14 +3,16 @@ import gsap from 'gsap'
 import ProductCard from '../ProductCard'
 import { usePublicProducts } from '../../hooks/useProducts'
 
-type FilterKey = 'all' | 'gate-motors' | 'cameras' | 'electric-fencing' | 'alarm-systems'
+type FilterKey = 'all' | 'gate-motors' | 'cameras' | 'electric-fencing' | 'alarm-systems' | 'networking' | 'construction'
 
 const FILTERS: { key: FilterKey; label: string; icon: string }[] = [
   { key: 'all',               label: 'All Products',    icon: '🛍️' },
   { key: 'gate-motors',       label: 'Gate Motors',     icon: '⚙️' },
   { key: 'cameras',           label: 'CCTV',            icon: '📷' },
-  { key: 'electric-fencing',  label: 'Construction',    icon: '⚡' },
-  { key: 'alarm-systems',     label: 'Security',        icon: '🔔' },
+  { key: 'electric-fencing',  label: 'Electric Fencing',icon: '⚡' },
+  { key: 'alarm-systems',     label: 'Alarm Systems',   icon: '🔔' },
+  { key: 'networking',        label: 'Networking',      icon: '🌐' },
+  { key: 'construction',      label: 'Construction',    icon: '🏗️' },
 ]
 
 export default function ProductsSection() {
@@ -43,6 +45,8 @@ export default function ProductsSection() {
     cameras:           products.filter((p) => p.categories?.slug === 'cameras').length,
     'electric-fencing':products.filter((p) => p.categories?.slug === 'electric-fencing').length,
     'alarm-systems':   products.filter((p) => p.categories?.slug === 'alarm-systems').length,
+    networking:        products.filter((p) => p.categories?.slug === 'networking').length,
+    construction:      products.filter((p) => p.categories?.slug === 'construction').length,
   }
 
   return (
