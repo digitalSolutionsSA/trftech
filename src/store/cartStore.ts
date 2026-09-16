@@ -1,12 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { CartItem, Product } from '../types'
+import type { CartItem, DbProduct } from '../types'
 
 interface CartStore {
   items: CartItem[]
-  add: (product: Product) => void
-  remove: (id: number) => void
-  updateQty: (id: number, qty: number) => void
+  add: (product: DbProduct) => void
+  remove: (id: string) => void
+  updateQty: (id: string, qty: number) => void
   clear: () => void
   total: () => number
   count: () => number
@@ -33,8 +33,8 @@ export const useCartStore = create<CartStore>()(
               {
                 id: product.id,
                 name: product.name,
-                price: product.price,
-                category: product.categoryLabel,
+                price: Number(product.price),
+                category: product.categories?.name ?? '',
                 icon: product.icon,
                 gradient: product.gradient,
                 qty: 1,

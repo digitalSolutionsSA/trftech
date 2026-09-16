@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useCartStore, formatPrice } from '../../store/cartStore'
 import { showToast } from '../Toast'
-import type { Product } from '../../types'
+import type { DbProduct } from '../../types'
 
-interface Props { product: Product }
+interface Props { product: DbProduct }
 
 export default function ProductCard({ product: p }: Props) {
   const add = useCartStore((s) => s.add)
@@ -31,28 +31,37 @@ export default function ProductCard({ product: p }: Props) {
     setTimeout(() => setAdded(false), 1500)
   }
 
-  const discount = p.oldPrice
-    ? Math.round((1 - p.price / p.oldPrice) * 100)
+  const discount = p.compare_at_price
+    ? Math.round((1 - p.price / p.compare_at_price) * 100)
     : null
 
   const stars = Array.from({ length: 5 }, (_, i) => i < Math.floor(p.rating) ? '★' : '☆').join('')
+  const inStock = p.stock > 0
+
+  const media = p.image_url ? (
+    <img
+      src={p.image_url}
+      alt={p.name}
+      className="pc-img"
+      loading="lazy"
+      onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3' }}
+    />
+  ) : (
+    <div className="pc-img" style={{ background: p.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>
+      {p.icon}
+    </div>
+  )
 
   return (
     <>
       <div className="pc-card" onClick={() => setOpen(true)}>
         {/* Image area */}
         <div className="pc-image">
-          <img
-            src={p.imageUrl}
-            alt={p.name}
-            className="pc-img"
-            loading="lazy"
-            onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3' }}
-          />
+          {media}
 
           {/* Badges */}
           <div className="pc-badges">
-            {p.badge && <span className={`pc-badge ${p.badgeClass ?? ''}`}>{p.badge}</span>}
+            {p.badge && <span className={`pc-badge ${p.badge_class ?? ''}`}>{p.badge}</span>}
             {discount && <span className="pc-badge pc-badge-discount">-{discount}%</span>}
           </div>
 
@@ -66,28 +75,28 @@ export default function ProductCard({ product: p }: Props) {
           </button>
 
           {/* Stock status */}
-          {!p.inStock && <div className="pc-out-of-stock">Out of Stock</div>}
+          {!inStock && <div className="pc-out-of-stock">Out of Stock</div>}
         </div>
 
         {/* Info area */}
         <div className="pc-body">
-          <div className="pc-category">{p.categoryLabel}</div>
+          <div className="pc-category">{p.categories?.name ?? ''}</div>
           <div className="pc-name">{p.name}</div>
 
           <div className="pc-rating">
             <span className="pc-stars">{stars}</span>
-            <span className="pc-rating-count">({p.reviews})</span>
+            <span className="pc-rating-count">({p.review_count})</span>
           </div>
 
           <div className="pc-pricing">
-            <span className="pc-price">{formatPrice(p.price)}</span>
-            {p.oldPrice && <span className="pc-old-price">{formatPrice(p.oldPrice)}</span>}
+            <span className="pc-price">{formatPrice(Number(p.price))}</span>
+            {p.compare_at_price && <span className="pc-old-price">{formatPrice(Number(p.compare_at_price))}</span>}
           </div>
 
           <button
-            className={`pc-add-btn${added ? ' added' : ''}${!p.inStock ? ' disabled' : ''}`}
+            className={`pc-add-btn${added ? ' added' : ''}${!inStock ? ' disabled' : ''}`}
             onClick={handleAdd}
-            disabled={!p.inStock}
+            disabled={!inStock}
           >
             {added ? '✓ Added to Cart' : '+ Add to Cart'}
           </button>
@@ -100,43 +109,49 @@ export default function ProductCard({ product: p }: Props) {
             <button className="pq-close" onClick={() => setOpen(false)} aria-label="Close">✕</button>
 
             <div className="pq-media">
-              <img
-                src={p.imageUrl}
-                alt={p.name}
-                className="pq-img"
-                onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3' }}
-              />
+              {p.image_url ? (
+                <img
+                  src={p.image_url}
+                  alt={p.name}
+                  className="pq-img"
+                  onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3' }}
+                />
+              ) : (
+                <div className="pq-img" style={{ background: p.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '5rem' }}>
+                  {p.icon}
+                </div>
+              )}
               <div className="pq-badges">
-                {p.badge && <span className={`pc-badge ${p.badgeClass ?? ''}`}>{p.badge}</span>}
+                {p.badge && <span className={`pc-badge ${p.badge_class ?? ''}`}>{p.badge}</span>}
                 {discount && <span className="pc-badge pc-badge-discount">-{discount}%</span>}
               </div>
             </div>
 
             <div className="pq-info">
-              <div className="pc-category">{p.categoryLabel}</div>
+              <div className="pc-category">{p.categories?.name ?? ''}</div>
               <h3 className="pq-name">{p.name}</h3>
 
               <div className="pc-rating">
                 <span className="pc-stars">{stars}</span>
-                <span className="pc-rating-count">({p.reviews} reviews)</span>
+                <span className="pc-rating-count">({p.review_count} reviews)</span>
               </div>
 
               <div className="pc-pricing">
-                <span className="pc-price">{formatPrice(p.price)}</span>
-                {p.oldPrice && <span className="pc-old-price">{formatPrice(p.oldPrice)}</span>}
+                <span className="pc-price">{formatPrice(Number(p.price))}</span>
+                {p.compare_at_price && <span className="pc-old-price">{formatPrice(Number(p.compare_at_price))}</span>}
               </div>
 
-              <p className="pq-desc">{p.desc}</p>
+              {p.description && <p className="pq-desc">{p.description}</p>}
 
-              <div className={`pq-stock ${p.inStock ? 'in' : 'out'}`}>
-                {p.inStock ? '● In Stock — ready to ship' : '● Currently Out of Stock'}
+              <div className={`pq-stock ${inStock ? 'in' : 'out'}`}>
+                {inStock ? '● In Stock — ready to ship' : '● Currently Out of Stock'}
               </div>
 
               <div className="pq-actions">
                 <button
-                  className={`pc-add-btn${added ? ' added' : ''}${!p.inStock ? ' disabled' : ''}`}
+                  className={`pc-add-btn${added ? ' added' : ''}${!inStock ? ' disabled' : ''}`}
                   onClick={handleAdd}
-                  disabled={!p.inStock}
+                  disabled={!inStock}
                 >
                   {added ? '✓ Added to Cart' : '+ Add to Cart'}
                 </button>

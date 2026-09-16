@@ -4,6 +4,7 @@ import Navbar from './components/Navbar'
 import PageLoader from './components/PageLoader'
 import ToastContainer from './components/Toast'
 import Home from './pages/Home'
+import ProtectedRoute from './components/admin/ProtectedRoute'
 import { useThemeStore } from './store/themeStore'
 
 const Cart             = lazy(() => import('./pages/Cart'))
@@ -11,6 +12,8 @@ const Checkout         = lazy(() => import('./pages/Checkout'))
 const Construction     = lazy(() => import('./pages/Construction'))
 const SecurityServices = lazy(() => import('./pages/SecurityServices'))
 const Gas               = lazy(() => import('./pages/Gas'))
+const AdminLogin        = lazy(() => import('./pages/admin/AdminLogin'))
+const AdminProducts     = lazy(() => import('./pages/admin/AdminProducts'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -42,10 +45,24 @@ function Layout() {
   )
 }
 
+function AdminLayout() {
+  return (
+    <Suspense fallback={null}>
+      <Routes>
+        <Route path="/"         element={<AdminLogin />} />
+        <Route path="/products" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
+      </Routes>
+    </Suspense>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <Layout />
+      <Routes>
+        <Route path="/admin/*" element={<AdminLayout />} />
+        <Route path="/*"       element={<Layout />} />
+      </Routes>
     </BrowserRouter>
   )
 }

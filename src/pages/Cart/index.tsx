@@ -4,14 +4,15 @@ import { useCartStore, formatPrice } from '../../store/cartStore'
 import { showToast } from '../../components/Toast'
 import ProductCard from '../../components/ProductCard'
 import Footer from '../../components/Footer'
-import { PRODUCTS } from '../../data/products'
+import { usePublicProducts } from '../../hooks/useProducts'
 import { sr } from '../../lib/scrollReveal'
 
 const DELIVERY = 250
 
 export default function Cart() {
-  const { items, remove, updateQty, clear, total, count } = useCartStore()
+  const { items, remove, updateQty, clear, total } = useCartStore()
   const navigate = useNavigate()
+  const { products } = usePublicProducts()
 
   const subtotal  = total()
   const delivery  = subtotal > 0 ? DELIVERY : 0
@@ -19,7 +20,8 @@ export default function Cart() {
   const grandTotal = subtotal + delivery + vat
 
   const cartIds = items.map((i) => i.id)
-  const related = PRODUCTS.filter((p) => !cartIds.includes(p.id))
+  const related = products
+    .filter((p) => !cartIds.includes(p.id))
     .sort(() => Math.random() - 0.5)
     .slice(0, 4)
 
