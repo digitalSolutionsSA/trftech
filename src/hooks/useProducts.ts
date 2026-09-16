@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import type { DbProduct, DbProductInsert, DbProductUpdate, DbCategory } from '../types'
+import type { DbProduct, DbProductInsert, DbProductUpdate, DbCategory, DbProductVariantInsert, DbProductVariantUpdate } from '../types'
+
+const PRODUCT_SELECT = '*, categories(id,name,slug), product_variants(*)'
+
+function sortVariants(product: DbProduct): DbProduct {
+  if (!product.product_variants) return product
+  return { ...product, product_variants: [...product.product_variants].sort((a, b) => a.sort_order - b.sort_order) }
+}
 
 export function useCategories() {
   const [categories, setCategories] = useState<DbCategory[]>([])
@@ -29,10 +36,10 @@ export function useAdminProducts() {
     setLoading(true)
     const { data, error } = await supabase
       .from('products')
-      .select('*, categories(id,name,slug)')
+      .select(PRODUCT_SELECT)
       .order('created_at', { ascending: false })
     if (error) setError(error.message)
-    else setProducts(data ?? [])
+    else setProducts((data ?? []).map(sortVariants))
     setLoading(false)
   }, [])
 
@@ -42,10 +49,10 @@ export function useAdminProducts() {
     const { data, error } = await supabase
       .from('products')
       .insert(product)
-      .select('*, categories(id,name,slug)')
+      .select(PRODUCT_SELECT)
       .single()
     if (error) throw error
-    setProducts((prev) => [data, ...prev])
+    setProducts((prev) => [sortVariants(data), ...prev])
     return data
   }
 
@@ -54,10 +61,10 @@ export function useAdminProducts() {
       .from('products')
       .update(product)
       .eq('id', id)
-      .select('*, categories(id,name,slug)')
+      .select(PRODUCT_SELECT)
       .single()
     if (error) throw error
-    setProducts((prev) => prev.map((p) => (p.id === id ? data : p)))
+    setProducts((prev) => prev.map((p) => (p.id === id ? sortVariants(data) : p)))
     return data
   }
 
@@ -78,7 +85,39 @@ export function useAdminProducts() {
     return data.publicUrl
   }
 
-  return { products, loading, error, create, update, remove, uploadImage, refetch: fetch }
+  const refreshProduct = async (productId: string) => {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq('id', productId)
+      .single()
+    if (error) throw error
+    setProducts((prev) => prev.map((p) => (p.id === productId ? sortVariants(data) : p)))
+    return data
+  }
+
+  const createVariant = async (variant: DbProductVariantInsert) => {
+    const { error } = await supabase.from('product_variants').insert(variant)
+    if (error) throw error
+    return refreshProduct(variant.product_id)
+  }
+
+  const updateVariant = async (id: string, productId: string, variant: DbProductVariantUpdate) => {
+    const { error } = await supabase.from('product_variants').update(variant).eq('id', id)
+    if (error) throw error
+    return refreshProduct(productId)
+  }
+
+  const removeVariant = async (id: string, productId: string) => {
+    const { error } = await supabase.from('product_variants').delete().eq('id', id)
+    if (error) throw error
+    return refreshProduct(productId)
+  }
+
+  return {
+    products, loading, error, create, update, remove, uploadImage, refetch: fetch,
+    createVariant, updateVariant, removeVariant,
+  }
 }
 
 export function usePublicProducts(categorySlug?: string) {
@@ -88,7 +127,7 @@ export function usePublicProducts(categorySlug?: string) {
   useEffect(() => {
     let q = supabase
       .from('products')
-      .select('*, categories(id,name,slug)')
+      .select(PRODUCT_SELECT)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
 
@@ -97,7 +136,7 @@ export function usePublicProducts(categorySlug?: string) {
     }
 
     q.then(({ data }) => {
-      setProducts(data ?? [])
+      setProducts((data ?? []).map(sortVariants))
       setLoading(false)
     })
   }, [categorySlug])

@@ -1,10 +1,10 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { CartItem, DbProduct } from '../types'
+import type { CartItem, DbProduct, DbProductVariant } from '../types'
 
 interface CartStore {
   items: CartItem[]
-  add: (product: DbProduct) => void
+  add: (product: DbProduct, variant?: DbProductVariant) => void
   remove: (id: string) => void
   updateQty: (id: string, qty: number) => void
   clear: () => void
@@ -17,13 +17,14 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
 
-      add: (product) => {
+      add: (product, variant) => {
+        const id = variant ? `${product.id}::${variant.id}` : product.id
         set((state) => {
-          const existing = state.items.find((i) => i.id === product.id)
+          const existing = state.items.find((i) => i.id === id)
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.id === product.id ? { ...i, qty: i.qty + 1 } : i
+                i.id === id ? { ...i, qty: i.qty + 1 } : i
               ),
             }
           }
@@ -31,9 +32,9 @@ export const useCartStore = create<CartStore>()(
             items: [
               ...state.items,
               {
-                id: product.id,
-                name: product.name,
-                price: Number(product.price),
+                id,
+                name: variant ? `${product.name} — ${variant.label}` : product.name,
+                price: Number(variant ? variant.price : product.price),
                 category: product.categories?.name ?? '',
                 icon: product.icon,
                 gradient: product.gradient,

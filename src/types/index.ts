@@ -49,10 +49,28 @@ export interface DbProduct {
   created_at: string
   updated_at: string
   categories?: DbCategory
+  product_variants?: DbProductVariant[]
 }
 
-export type DbProductInsert = Omit<DbProduct, 'id' | 'created_at' | 'updated_at' | 'categories'>
+export type DbProductInsert = Omit<DbProduct, 'id' | 'created_at' | 'updated_at' | 'categories' | 'product_variants'>
 export type DbProductUpdate = Partial<DbProductInsert>
+
+export interface DbProductVariant {
+  id: string
+  product_id: string
+  label: string
+  price: number
+  compare_at_price: number | null
+  image_url: string | null
+  stock: number
+  sort_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type DbProductVariantInsert = Omit<DbProductVariant, 'id' | 'created_at' | 'updated_at'>
+export type DbProductVariantUpdate = Partial<DbProductVariantInsert>
 
 export interface CartItem {
   id: string

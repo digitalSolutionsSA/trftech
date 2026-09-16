@@ -3,16 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { useAdminProducts, useCategories } from '../../hooks/useProducts'
 import { useAuth } from '../../hooks/useAuth'
 import ProductForm from '../../components/admin/ProductForm'
+import VariantsManager from '../../components/admin/VariantsManager'
 import type { DbProduct, DbProductInsert } from '../../types'
 
 export default function AdminProducts() {
   const { user, signOut } = useAuth()
-  const { products, loading, error, create, update, remove, uploadImage } = useAdminProducts()
+  const { products, loading, error, create, update, remove, uploadImage, createVariant, updateVariant, removeVariant } = useAdminProducts()
   const { categories } = useCategories()
   const navigate = useNavigate()
 
   const [modal, setModal] = useState<'add' | 'edit' | null>(null)
   const [editing, setEditing] = useState<DbProduct | null>(null)
+  const [variantsTargetId, setVariantsTargetId] = useState<string | null>(null)
+  const variantsTarget = variantsTargetId ? products.find((p) => p.id === variantsTargetId) ?? null : null
   const [deleteTarget, setDeleteTarget] = useState<DbProduct | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [search, setSearch] = useState('')
@@ -130,7 +133,14 @@ export default function AdminProducts() {
           {[
             { label: 'Total Products', value: products.length },
             { label: 'Active', value: products.filter((p) => p.is_active).length },
-            { label: 'Out of Stock', value: products.filter((p) => p.stock === 0).length },
+            {
+              label: 'Out of Stock',
+              value: products.filter((p) =>
+                p.product_variants && p.product_variants.length > 0
+                  ? p.product_variants.every((v) => v.stock === 0)
+                  : p.stock === 0
+              ).length,
+            },
             { label: 'Featured', value: products.filter((p) => p.is_featured).length },
           ].map((stat) => (
             <div key={stat.label} style={{
@@ -201,17 +211,31 @@ export default function AdminProducts() {
                       </span>
                     </td>
                     <td style={td}>
-                      <div style={{ fontWeight: 600 }}>R {product.price.toLocaleString()}</div>
-                      {product.compare_at_price && (
-                        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', textDecoration: 'line-through' }}>
-                          R {product.compare_at_price.toLocaleString()}
+                      {product.product_variants && product.product_variants.length > 0 ? (
+                        <div style={{ fontWeight: 600 }}>
+                          From R {Math.min(...product.product_variants.map((v) => Number(v.price))).toLocaleString()}
                         </div>
+                      ) : (
+                        <>
+                          <div style={{ fontWeight: 600 }}>R {product.price.toLocaleString()}</div>
+                          {product.compare_at_price && (
+                            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', textDecoration: 'line-through' }}>
+                              R {product.compare_at_price.toLocaleString()}
+                            </div>
+                          )}
+                        </>
                       )}
                     </td>
                     <td style={td}>
-                      <span style={{ color: product.stock === 0 ? '#f87171' : product.stock < 5 ? '#fbbf24' : 'rgba(255,255,255,0.7)' }}>
-                        {product.stock === 0 ? 'Out of stock' : product.stock}
-                      </span>
+                      {product.product_variants && product.product_variants.length > 0 ? (
+                        <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                          {product.product_variants.reduce((sum, v) => sum + v.stock, 0)} across variants
+                        </span>
+                      ) : (
+                        <span style={{ color: product.stock === 0 ? '#f87171' : product.stock < 5 ? '#fbbf24' : 'rgba(255,255,255,0.7)' }}>
+                          {product.stock === 0 ? 'Out of stock' : product.stock}
+                        </span>
+                      )}
                     </td>
                     <td style={td}>
                       <span style={{
@@ -232,6 +256,12 @@ export default function AdminProducts() {
                           style={{ ...ghostBtn, padding: '4px 12px', fontSize: '0.8rem' }}
                         >
                           Edit
+                        </button>
+                        <button
+                          onClick={() => setVariantsTargetId(product.id)}
+                          style={{ ...ghostBtn, padding: '4px 12px', fontSize: '0.8rem' }}
+                        >
+                          Variants{product.product_variants && product.product_variants.length > 0 ? ` (${product.product_variants.length})` : ''}
                         </button>
                         <button
                           onClick={() => setDeleteTarget(product)}
@@ -270,6 +300,34 @@ export default function AdminProducts() {
               categories={categories}
               onSave={handleSave}
               onCancel={() => { setModal(null); setEditing(null) }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Variants Modal */}
+      {variantsTarget && (
+        <div style={overlay} onClick={(e) => { if (e.target === e.currentTarget) setVariantsTargetId(null) }}>
+          <div style={{
+            background: '#111118',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 16,
+            padding: '1.75rem',
+            width: '100%',
+            maxWidth: 760,
+            maxHeight: '90vh',
+            overflowY: 'auto',
+          }}>
+            <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: 700 }}>
+              Manage Variants
+            </h2>
+            <VariantsManager
+              product={variantsTarget}
+              onUploadImage={uploadImage}
+              onCreate={createVariant}
+              onUpdate={updateVariant}
+              onRemove={removeVariant}
+              onClose={() => setVariantsTargetId(null)}
             />
           </div>
         </div>
