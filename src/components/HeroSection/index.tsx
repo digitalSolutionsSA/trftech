@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, Suspense, lazy } from 'react'
 import gsap from 'gsap'
-import ThreeScene from '../ThreeScene'
+
+const ThreeScene = lazy(() => import('../ThreeScene'))
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1600&q=80&auto=format&fit=crop'
 
@@ -10,7 +11,7 @@ export default function HeroSection() {
   useEffect(() => {
     if (!sectionRef.current) return
     const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ delay: 1.7 })
+      const tl = gsap.timeline({ delay: 0.85 })
       tl.from('.hero-badge',    { y: 40, opacity: 0, duration: 0.7, ease: 'back.out(1.7)' })
         .from('.hero-title',    { y: 60, opacity: 0, duration: 0.9, ease: 'power3.out' }, '-=0.4')
         .from('.hero-subtitle', { y: 40, opacity: 0, duration: 0.7, ease: 'power2.out' }, '-=0.5')
@@ -29,7 +30,9 @@ export default function HeroSection() {
         className="hero-bg-img"
         style={{ backgroundImage: `url(${HERO_IMG})` }}
       />
-      <ThreeScene className="hero-canvas" />
+      <Suspense fallback={null}>
+        <ThreeScene className="hero-canvas" />
+      </Suspense>
       <div className="hero-overlay" />
 
       <div className="hero-content">
@@ -95,9 +98,7 @@ export default function HeroSection() {
                 fill="url(#sg)" fillOpacity="0.14" stroke="url(#sg)" strokeWidth="2" filter="url(#glow)" />
               <path d="M100 30 L165 55 L165 120 Q165 168 100 200 Q35 168 35 120 L35 55 Z"
                 fill="url(#sg)" fillOpacity="0.07" stroke="url(#sg)" strokeWidth="1" strokeOpacity="0.4" />
-              <rect x="82" y="105" width="36" height="28" rx="4" fill="none" stroke="#ff7a00" strokeWidth="2.5" filter="url(#glow)" />
-              <path d="M88 105 L88 98 Q88 88 100 88 Q112 88 112 98 L112 105" fill="none" stroke="#ff7a00" strokeWidth="2.5" strokeLinecap="round" filter="url(#glow)" />
-              <circle cx="100" cy="119" r="4" fill="#ff7a00" filter="url(#glow)" />
+              <image href="/logo-trf.png" x="45" y="60" width="110" height="110" filter="url(#glow)" />
               <line x1="60" y1="90" x2="75" y2="90" stroke="#ff7a00" strokeWidth="1" strokeOpacity="0.5" />
               <line x1="75" y1="90" x2="75" y2="75" stroke="#ff7a00" strokeWidth="1" strokeOpacity="0.5" />
               <circle cx="75" cy="75" r="2.5" fill="#ff7a00" fillOpacity="0.7" />
