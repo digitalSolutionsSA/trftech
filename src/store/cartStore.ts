@@ -68,7 +68,18 @@ export const useCartStore = create<CartStore>()(
       count: () =>
         get().items.reduce((sum, i) => sum + i.qty, 0),
     }),
-    { name: 'trf-tech-cart' }
+    {
+      name: 'trf-tech-cart',
+      version: 1,
+      // v0 carts (from the old static catalogue) stored numeric ids
+      migrate: (persisted) => {
+        const state = persisted as { items?: CartItem[] }
+        return {
+          ...state,
+          items: (state.items ?? []).map((i) => ({ ...i, id: String(i.id) })),
+        } as CartStore
+      },
+    }
   )
 )
 

@@ -17,7 +17,10 @@ const AdminProducts     = lazy(() => import('./pages/admin/AdminProducts'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
-  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  useEffect(() => {
+    document.documentElement.classList.toggle('snap-scroll', pathname === '/')
+    window.scrollTo(0, 0)
+  }, [pathname])
   return null
 }
 

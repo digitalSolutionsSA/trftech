@@ -4,11 +4,14 @@ import { useCartStore, formatPrice } from '../../store/cartStore'
 import { showToast } from '../../components/Toast'
 import Footer from '../../components/Footer'
 
-type Step = 1 | 2 | 3 | 4
-type PayMethod = 'card' | 'eft' | 'payfast' | 'snapscan'
-type DeliveryMethod = 'standard' | 'express' | 'collection'
+type Step = 1 | 2 | 3
+type DeliveryMethod = 'standard' | 'express'
 
-const DELIVERY_COSTS: Record<DeliveryMethod, number> = { standard: 250, express: 450, collection: 0 }
+const DELIVERY_COSTS: Record<DeliveryMethod, number> = { standard: 250, express: 450 }
+const DELIVERY_LABELS: Record<DeliveryMethod, string> = { standard: 'Standard (2–5 days)', express: 'Express (Next Day)' }
+
+// Orders are sent as a WhatsApp request — 084 555 9862 in international format
+const WHATSAPP_NUMBER = '27845559862'
 
 export default function Checkout() {
   const { items, total, clear } = useCartStore()
@@ -16,6 +19,7 @@ export default function Checkout() {
 
   const [step, setStep]         = useState<Step>(1)
   const [orderNum, setOrderNum] = useState('')
+  const [waLink, setWaLink]     = useState('')
 
   // Step 1
   const [fname, setFname]   = useState('')
@@ -29,13 +33,6 @@ export default function Checkout() {
   const [province, setProvince] = useState('')
   const [postal, setPostal]     = useState('')
   const [delivery, setDelivery] = useState<DeliveryMethod>('standard')
-
-  // Step 3
-  const [payMethod, setPayMethod] = useState<PayMethod>('card')
-  const [cardName, setCardName]   = useState('')
-  const [cardNum, setCardNum]     = useState('')
-  const [cardExp, setCardExp]     = useState('')
-  const [cardCvv, setCardCvv]     = useState('')
 
   const subtotal   = total()
   const deliveryCost = DELIVERY_COSTS[delivery]
@@ -59,40 +56,65 @@ export default function Checkout() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const buildMessage = (num: string) => [
+    `Hi TRF Tech, I'd like to place an order. Please confirm stock availability.`,
+    ``,
+    `*Order ${num}*`,
+    ``,
+    `*Items*`,
+    ...items.map((i) => `• ${i.name.trim()} × ${i.qty} — ${formatPrice(i.price * i.qty)}`),
+    ``,
+    `Subtotal: ${formatPrice(subtotal)}`,
+    `Delivery – ${DELIVERY_LABELS[delivery]}: ${formatPrice(deliveryCost)}`,
+    `VAT (15%): ${formatPrice(vat)}`,
+    `*Total: ${formatPrice(grandTotal)}*`,
+    ``,
+    `*Customer*`,
+    `${fname} ${lname}`,
+    email,
+    phone,
+    ``,
+    `*Delivery address*`,
+    address,
+    `${city}, ${province} ${postal}`,
+    ``,
+    `Are all of these items currently in stock?`,
+  ].join('\n')
+
   const placeOrder = () => {
     if (items.length === 0) { showToast('⚠️', 'Empty Cart', 'Add products before ordering.'); return }
-    const num = 'TRF-' + Date.now().toString().slice(-6)
+    const num  = 'TRF-' + Date.now().toString().slice(-6)
+    const link = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildMessage(num))}`
+    window.open(link, '_blank', 'noopener')
     setOrderNum(num)
-    setStep(4)
+    setWaLink(link)
     clear()
-    showToast('🎉', 'Order Placed!', `Order #${num} confirmed.`)
+    showToast('💬', 'Opening WhatsApp', `Send the message to submit order #${num}.`)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const formatCard = (v: string) => v.replace(/\D/g, '').substring(0, 16).replace(/(.{4})/g, '$1 ').trim()
-  const formatExp  = (v: string) => { const d = v.replace(/\D/g, ''); return d.length >= 2 ? d.slice(0,2) + '/' + d.slice(2,4) : d }
+  const stepLabels = ['Your Details', 'Delivery', 'Review']
 
-  const stepLabels = ['Your Details', 'Delivery', 'Payment', 'Confirm']
-
-  if (step === 4 && orderNum) {
+  if (orderNum) {
     return (
       <>
         <div className="page-header">
           <div className="container">
-            <h1 className="page-header-title">Order <span>Confirmed</span></h1>
+            <h1 className="page-header-title">Order <span>Request</span></h1>
           </div>
         </div>
         <div className="container">
           <div className="order-success" style={{ padding: '80px 20px' }}>
-            <div className="success-icon">🎉</div>
-            <h2 style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '2rem', color: 'var(--success)', marginBottom: 12 }}>Order Placed!</h2>
+            <div className="success-icon">💬</div>
+            <h2 style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '2rem', color: 'var(--success)', marginBottom: 12 }}>Almost Done!</h2>
             <p style={{ color: 'var(--text-muted)', maxWidth: 480, margin: '0 auto 12px' }}>
-              Thank you for your order. A confirmation email will be sent to <strong>{email}</strong> shortly.
+              Your order has been written into a WhatsApp message. Press <strong>send</strong> in WhatsApp and
+              we'll confirm stock availability and payment details with you.
             </p>
             <div className="success-order-num">Order #{orderNum}</div>
             <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginTop: 28 }}>
-              <Link to="/" className="btn btn-primary">Continue Shopping</Link>
-              <Link to="/" className="btn btn-secondary">Back to Home</Link>
+              <a href={waLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary">💬 Open WhatsApp Again</a>
+              <Link to="/" className="btn btn-secondary">Continue Shopping</Link>
             </div>
           </div>
         </div>
@@ -172,7 +194,7 @@ export default function Checkout() {
 
                 <div className="form-section">
                   <div className="form-section-title">📦 Delivery Method</div>
-                  {([['standard','Standard Delivery (2–5 days)','R 250 — Courier to your door','🚚'],['express','Express Delivery (Next day)','R 450 — Guaranteed next business day','⚡'],['collection','Collection (Free)','Collect from our Vereeniging showroom','🏪']] as const).map(([key, name, desc, icon]) => (
+                  {([['standard','Standard Delivery (2–5 days)','R 250 — Courier to your door','🚚'],['express','Express Delivery (Next day)','R 450 — Guaranteed next business day','⚡']] as const).map(([key, name, desc, icon]) => (
                     <div key={key} className={`payment-option${delivery === key ? ' active' : ''}`} onClick={() => setDelivery(key)}>
                       <input type="radio" name="delivery" readOnly checked={delivery === key} />
                       <div style={{ flex: 1 }}>
@@ -186,55 +208,13 @@ export default function Checkout() {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                   <button className="btn btn-secondary" onClick={() => goTo(1)}>← Back</button>
-                  <button className="btn btn-primary" onClick={() => goTo(3)}>Continue to Payment →</button>
+                  <button className="btn btn-primary" onClick={() => goTo(3)}>Review Order →</button>
                 </div>
               </>
             )}
 
-            {/* Step 3 */}
+            {/* Step 3 - Review */}
             {step === 3 && (
-              <>
-                <div className="form-section">
-                  <div className="form-section-title">💳 Payment Method</div>
-                  {([['card','Credit / Debit Card','Visa, Mastercard, Amex','💳'],['eft','EFT / Bank Transfer','Manual transfer — 24h hold for clearance','🏦'],['payfast','PayFast / Instant EFT','Secure payment via PayFast gateway','⚡'],['snapscan','SnapScan','Scan to pay with your banking app','📱']] as const).map(([key, name, desc, icon]) => (
-                    <div key={key} className={`payment-option${payMethod === key ? ' active' : ''}`} onClick={() => setPayMethod(key)}>
-                      <input type="radio" name="payment" readOnly checked={payMethod === key} />
-                      <div style={{ flex: 1 }}>
-                        <div className="payment-option-name">{name}</div>
-                        <div className="payment-option-desc">{desc}</div>
-                      </div>
-                      <span style={{ fontSize: '1.4rem' }}>{icon}</span>
-                    </div>
-                  ))}
-
-                  {payMethod === 'card' && (
-                    <div className="form-grid" style={{ marginTop: 20 }}>
-                      <div className="form-group full"><label className="form-label">Cardholder Name *</label><input className="form-input" value={cardName} onChange={(e) => setCardName(e.target.value)} placeholder="As on card" /></div>
-                      <div className="form-group full"><label className="form-label">Card Number *</label><input className="form-input" value={cardNum} onChange={(e) => setCardNum(formatCard(e.target.value))} placeholder="1234 5678 9012 3456" /></div>
-                      <div className="form-group"><label className="form-label">Expiry *</label><input className="form-input" value={cardExp} onChange={(e) => setCardExp(formatExp(e.target.value))} placeholder="MM/YY" maxLength={5} /></div>
-                      <div className="form-group"><label className="form-label">CVV *</label><input className="form-input" type="password" value={cardCvv} onChange={(e) => setCardCvv(e.target.value)} placeholder="•••" maxLength={4} /></div>
-                    </div>
-                  )}
-
-                  {payMethod === 'eft' && (
-                    <div style={{ marginTop: 18, background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.18)', borderRadius: 12, padding: 20 }}>
-                      <div style={{ fontWeight: 700, marginBottom: 12, color: 'var(--primary)' }}>🏦 Bank Details</div>
-                      {[['Bank','FNB'],['Account Name','TRF Tech (Pty) Ltd'],['Account No','62 000 000 00'],['Branch Code','250 655']].map(([k,v]) => (
-                        <div key={k} style={{ fontSize: '0.87rem', color: 'var(--text-muted)', marginBottom: 6 }}><strong style={{ color: 'var(--text)' }}>{k}:</strong> {v}</div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                  <button className="btn btn-secondary" onClick={() => goTo(2)}>← Back</button>
-                  <button className="btn btn-primary" onClick={() => goTo(3 + 1 as Step)}>Review Order →</button>
-                </div>
-              </>
-            )}
-
-            {/* Step 4 - Review */}
-            {step === (3 + 1) && (
               <>
                 <div className="form-section">
                   <div className="form-section-title">✅ Review Your Order</div>
@@ -242,8 +222,7 @@ export default function Checkout() {
                     {[
                       ['Contact', `${fname} ${lname}\n${email}\n${phone}`],
                       ['Delivery Address', `${address}\n${city}, ${province} ${postal}`],
-                      ['Payment', { card:'Credit/Debit Card', eft:'Bank EFT', payfast:'PayFast', snapscan:'SnapScan' }[payMethod]],
-                      ['Delivery', { standard:'Standard (2–5 days)', express:'Express (Next Day)', collection:'Collection' }[delivery]],
+                      ['Delivery', DELIVERY_LABELS[delivery]],
                     ].map(([label, val]) => (
                       <div key={label as string} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 16 }}>
                         <div style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>{label as string}</div>
@@ -266,9 +245,9 @@ export default function Checkout() {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                  <button className="btn btn-secondary" onClick={() => goTo(3)}>← Back</button>
+                  <button className="btn btn-secondary" onClick={() => goTo(2)}>← Back</button>
                   <button className="btn btn-orange" style={{ fontSize: '1rem', padding: '14px 32px' }} onClick={placeOrder}>
-                    🔒 Place Order
+                    💬 Send Order via WhatsApp
                   </button>
                 </div>
               </>
@@ -294,7 +273,7 @@ export default function Checkout() {
               <div className="summary-row"><span className="label">VAT (15%)</span><span>{formatPrice(vat)}</span></div>
               <div className="summary-row total"><span>Total</span><span>{formatPrice(grandTotal)}</span></div>
             </div>
-            <div className="secure-note" style={{ marginTop: 18 }}>🔒 256-bit SSL Encrypted</div>
+            <div className="secure-note" style={{ marginTop: 18 }}>💬 We'll confirm stock and payment on WhatsApp</div>
           </div>
         </div>
       </div>

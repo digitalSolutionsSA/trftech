@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCartStore, formatPrice } from '../../store/cartStore'
 import { showToast } from '../../components/Toast'
@@ -19,10 +19,14 @@ export default function Cart() {
   const vat       = Math.round((subtotal + delivery) * 0.15)
   const grandTotal = subtotal + delivery + vat
 
-  const cartIds = items.map((i) => i.id)
-  const related = products
-    .filter((p) => !cartIds.includes(p.id))
-    .sort(() => Math.random() - 0.5)
+  // Shuffle once per product load so qty changes don't reshuffle the grid
+  const shuffled = useMemo(
+    () => [...products].sort(() => Math.random() - 0.5),
+    [products]
+  )
+  const cartProductIds = items.map((i) => String(i.id).split('::')[0])
+  const related = shuffled
+    .filter((p) => !cartProductIds.includes(p.id))
     .slice(0, 4)
 
   const handleClear = () => {
@@ -134,13 +138,7 @@ export default function Cart() {
               Proceed to Checkout →
             </button>
 
-            <div className="secure-note">🔒 Secure checkout — SSL encrypted</div>
-
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 14, flexWrap: 'wrap' }}>
-              {['💳 Card', 'EFT', 'PayFast', 'SnapScan'].map((m) => (
-                <span key={m} style={{ fontSize: '0.73rem', background: 'rgba(255,255,255,0.06)', padding: '4px 9px', borderRadius: 6, color: 'var(--text-muted)' }}>{m}</span>
-              ))}
-            </div>
+            <div className="secure-note">💬 Orders are confirmed via WhatsApp</div>
           </div>
         </div>
 
