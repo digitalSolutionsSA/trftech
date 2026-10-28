@@ -1,118 +1,220 @@
-import { useEffect, useRef, Suspense, lazy } from 'react'
-import gsap from 'gsap'
+import { useEffect, useRef } from 'react'
+import { gsap, ScrollTrigger, SplitText, prefersReducedMotion, SCRAMBLE_CHARS } from '../../lib/gsap'
+import { introReady, fontsReady } from '../../lib/intro'
+import { scrollToId } from '../../lib/lenis'
+import { SecurityDome } from '../../three/SecurityDome'
 
-const ThreeScene = lazy(() => import('../ThreeScene'))
+const LINES = [
+  { text: 'PROTECT', cls: '' },
+  { text: 'WHAT', cls: 'text-stroke' },
+  { text: 'MATTERS.', cls: 'text-armed' },
+]
 
-const HERO_IMG = 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1600&q=80&auto=format&fit=crop'
-
+/**
+ * Hero: a Three.js shield dome assembles over the property once the boot screen lifts, while
+ * the headline glitches in and the HUD decrypts. The section then pins: scrolling arms the
+ * system (amber → deep orange), swoops the camera into the dome and shears the headline apart.
+ */
 export default function HeroSection() {
-  const sectionRef = useRef<HTMLElement>(null)
+  const root = useRef<HTMLElement>(null)
+  const stage = useRef<HTMLDivElement>(null)
+  const clock = useRef<HTMLSpanElement>(null)
+
+  // Live SAST clock in the HUD
+  useEffect(() => {
+    const fmt = new Intl.DateTimeFormat('en-ZA', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Africa/Johannesburg',
+    })
+    const paint = () => { if (clock.current) clock.current.textContent = fmt.format(new Date()) }
+    paint()
+    const t = window.setInterval(paint, 1000)
+    return () => window.clearInterval(t)
+  }, [])
 
   useEffect(() => {
-    if (!sectionRef.current) return
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ delay: 0.85 })
-      tl.from('.hero-badge',    { y: 40, opacity: 0, duration: 0.7, ease: 'back.out(1.7)' })
-        .from('.hero-title',    { y: 60, opacity: 0, duration: 0.9, ease: 'power3.out' }, '-=0.4')
-        .from('.hero-subtitle', { y: 40, opacity: 0, duration: 0.7, ease: 'power2.out' }, '-=0.5')
-        .from('.hero-cta',      { y: 30, opacity: 0, duration: 0.6, ease: 'power2.out' }, '-=0.4')
-        .from('.hero-stat',     { y: 30, opacity: 0, stagger: 0.12, duration: 0.5 },      '-=0.3')
-        .from('.hero-scroll',   { opacity: 0, duration: 0.5 },                             '-=0.2')
-        .from('.hero-visual',   { scale: 0.8, opacity: 0, duration: 1, ease: 'elastic.out(1,0.6)' }, '<-1.5')
-    }, sectionRef)
-    return () => ctx.revert()
+    const el = root.current
+    if (!el || !stage.current) return
+
+    let dome: SecurityDome | null = null
+    try {
+      dome = new SecurityDome(stage.current)
+    } catch {
+      // No WebGL: the CSS glow and grid carry the hero on their own
+      el.classList.add('hero--no-webgl')
+    }
+
+    if (prefersReducedMotion()) {
+      if (dome) dome.intro = 0
+      return () => dome?.dispose()
+    }
+
+    let ctx: gsap.Context | undefined
+    let alive = true
+    const pre = gsap.context(() => {
+      gsap.set('[data-hero-fade], [data-hero-cta] > *', { opacity: 0 })
+    }, el)
+
+    Promise.all([introReady, fontsReady]).then(() => {
+      if (!alive) return
+      ctx = gsap.context(() => {
+        const split = SplitText.create('[data-hero-word]', { type: 'chars', charsClass: 'split-char' })
+
+        // Gradient text paints per character while split, so put the words back once they've landed
+        const tl = gsap.timeline({ onComplete: () => split.revert() })
+        if (dome) tl.to(dome, { intro: 0, duration: 3, ease: 'expo.out' }, 0)
+        tl.from(split.chars, {
+          yPercent: 120,
+          opacity: 0,
+          textShadow: '-0.1em 0 0 #ff7a00, 0.1em 0 0 #fff1c2',
+          duration: 1.1,
+          stagger: { each: 0.035, from: 'random' },
+          clearProps: 'textShadow',
+        }, 0.1)
+          .to('[data-hero-fade]', { opacity: 1, duration: 1, stagger: 0.1 }, 0.5)
+          .fromTo('[data-hero-cta] > *', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, stagger: 0.1 }, 0.75)
+          .from('[data-hero-corner]', { scale: 1.6, opacity: 0, duration: 0.9, stagger: 0.06, ease: 'expo.out' }, 0.2)
+
+        el.querySelectorAll<HTMLElement>('[data-hero-scramble]').forEach((node, i) => {
+          tl.to(node, {
+            duration: 1.1,
+            ease: 'none',
+            scrambleText: { text: node.dataset.heroScramble!, chars: SCRAMBLE_CHARS, speed: 0.6 },
+          }, 0.45 + i * 0.15)
+        })
+
+        el.querySelectorAll<HTMLElement>('[data-hero-count]').forEach((node) => {
+          const n = { v: 0 }
+          const to = Number(node.dataset.heroCount)
+          const suffix = node.dataset.suffix ?? ''
+          tl.to(n, {
+            v: to,
+            duration: 2,
+            ease: 'power3.out',
+            onUpdate: () => (node.textContent = `${Math.round(n.v).toLocaleString('en-ZA')}${suffix}`),
+          }, 0.9)
+        })
+
+        // Pinned scroll-away: arm the dome, shear the headline, fade the copy, then the dome's
+        // wires tear loose and reassemble as the TRF mark
+        const scrub = gsap.timeline({
+          defaults: { ease: 'none' },
+          scrollTrigger: {
+            trigger: el, start: 'top top', end: '+=140%', scrub: 0.8, pin: true, anticipatePin: 1, refreshPriority: 10,
+            onUpdate: (self) => el.classList.toggle('is-armed', self.progress > 0.3),
+          },
+        })
+        if (dome) scrub.to(dome, { progress: 1 }, 0)
+        ;[-20, 16, -10].forEach((x, i) => {
+          scrub.to(`[data-hero-line="${i}"]`, { xPercent: x, opacity: 0.12 }, 0)
+        })
+        scrub
+          .to('[data-hero-overlay]', { yPercent: -16, opacity: 0, filter: 'blur(8px)' }, 0.12)
+          .to('[data-hero-glow]', { scale: 1.5, opacity: 0 }, 0)
+          .to('[data-hero-flash]', { opacity: 1 }, 0.72)
+          .to('.hero2__headline', { opacity: 0, duration: 0.3 }, 0.5)
+        if (dome) scrub.to(dome, { morph: 1, duration: 0.9, ease: 'power1.inOut' }, 0.55)
+        scrub
+          .fromTo('[data-hero-brand] > *',
+            { opacity: 0, y: 24, letterSpacing: '0.6em' },
+            { opacity: 1, y: 0, letterSpacing: (_, t: HTMLElement) => t.dataset.spacing ?? '0.2em', duration: 0.35, stagger: 0.08 },
+            1.2)
+          .to({}, { duration: 0.25 }) // hold on the mark before the pin releases
+        ScrollTrigger.sort()
+        ScrollTrigger.refresh()
+      }, el)
+    })
+
+    return () => {
+      alive = false
+      pre.revert()
+      ctx?.revert()
+      dome?.dispose()
+    }
   }, [])
 
   return (
-    <section className="hero" id="hero" ref={sectionRef}>
-      {/* Unsplash background image */}
-      <div
-        className="hero-bg-img"
-        style={{ backgroundImage: `url(${HERO_IMG})` }}
-      />
-      <Suspense fallback={null}>
-        <ThreeScene className="hero-canvas" />
-      </Suspense>
-      <div className="hero-overlay" />
+    <section ref={root} className="hero2 noise" id="hero">
+      <div data-hero-glow className="hero2__glow hero2__glow--amber" />
+      <div data-hero-glow className="hero2__glow hero2__glow--orange" />
+      <div className="hero2__grid hud-grid" />
+      <div ref={stage} className="hero2__stage" aria-hidden />
+      <div className="hero2__vignette" />
+      <div className="hero2__scanlines" aria-hidden />
+      <div data-hero-flash className="hero2__flash" />
 
-      <div className="hero-content">
-        <div>
-          <div className="hero-badge">
-            <span className="badge-dot" />
-            Trusted Security Solutions — South Africa
-          </div>
+      {/* Viewfinder corners */}
+      <span data-hero-corner className="hud-corner hud-corner--tl" aria-hidden />
+      <span data-hero-corner className="hud-corner hud-corner--tr" aria-hidden />
+      <span data-hero-corner className="hud-corner hud-corner--bl" aria-hidden />
+      <span data-hero-corner className="hud-corner hud-corner--br" aria-hidden />
 
-          <h1 className="hero-title">
-            Next-Gen<br />
-            <span>Security &amp;</span><br />
-            Technology
-          </h1>
-
-          <p className="hero-subtitle">
-            TRF Tech delivers cutting-edge security systems for homes and businesses across South Africa — from gate automation to smart surveillance and beyond.
+      <div className="hero2__inner container">
+        <div data-hero-overlay className="hero2__top">
+          <p data-hero-fade className="hud-label hero2__badge">
+            <span className="rec-dot" />
+            <span data-hero-scramble="CAM 01 · LIVE · Vereeniging, Gauteng">CAM 01 · LIVE · Vereeniging, Gauteng</span>
           </p>
-
-          <div className="hero-cta">
-            <a href="#products" className="btn btn-primary"
-              onClick={(e) => { e.preventDefault(); document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' }) }}>
-              Shop Now →
-            </a>
-            <a href="#services" className="btn btn-secondary"
-              onClick={(e) => { e.preventDefault(); document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' }) }}>
-              Our Services
-            </a>
-          </div>
-
-          <div className="hero-stats">
-            {[
-              { num: '1,500+', label: 'Installations' },
-              { num: '12',     label: 'Years Experience' },
-              { num: '98%',    label: 'Client Satisfaction' },
-            ].map((s) => (
-              <div className="hero-stat" key={s.label}>
-                <div className="hero-stat-num">{s.num}</div>
-                <div className="hero-stat-label">{s.label}</div>
-              </div>
-            ))}
+          <div data-hero-fade className="hud-label hero2__meta">
+            <span className="hero2__status">
+              STATUS: <b className="hero2__status-scan">SCANNING</b><b className="hero2__status-armed">ARMED</b>
+            </span>
+            <span>SAST <span ref={clock}>--:--:--</span></span>
           </div>
         </div>
 
-        {/* Right — animated shield */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <div className="hero-visual">
-            <div className="orbit orbit-1"><div className="orbit-dot" /></div>
-            <div className="orbit orbit-2"><div className="orbit-dot" /></div>
-            <div className="orbit orbit-3"><div className="orbit-dot" /></div>
-            <svg className="hero-shield-svg" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%"   stopColor="#ff7a00" stopOpacity="0.9" />
-                  <stop offset="100%" stopColor="#ffb347" stopOpacity="0.6" />
-                </linearGradient>
-                <filter id="glow">
-                  <feGaussianBlur stdDeviation="3" result="blur" />
-                  <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                </filter>
-              </defs>
-              <path d="M100 10 L180 40 L180 120 Q180 180 100 220 Q20 180 20 120 L20 40 Z"
-                fill="url(#sg)" fillOpacity="0.14" stroke="url(#sg)" strokeWidth="2" filter="url(#glow)" />
-              <path d="M100 30 L165 55 L165 120 Q165 168 100 200 Q35 168 35 120 L35 55 Z"
-                fill="url(#sg)" fillOpacity="0.07" stroke="url(#sg)" strokeWidth="1" strokeOpacity="0.4" />
-              <image href="/logo-plain.png" x="50" y="75" width="100" height="100" preserveAspectRatio="xMidYMid meet" style={{ filter: 'drop-shadow(0 0 6px #ff7a00aa)' }} />
-              <line x1="60" y1="90" x2="75" y2="90" stroke="#ff7a00" strokeWidth="1" strokeOpacity="0.5" />
-              <line x1="75" y1="90" x2="75" y2="75" stroke="#ff7a00" strokeWidth="1" strokeOpacity="0.5" />
-              <circle cx="75" cy="75" r="2.5" fill="#ff7a00" fillOpacity="0.7" />
-              <line x1="140" y1="90" x2="125" y2="90" stroke="#ffb347" strokeWidth="1" strokeOpacity="0.5" />
-              <line x1="125" y1="90" x2="125" y2="75" stroke="#ffb347" strokeWidth="1" strokeOpacity="0.5" />
-              <circle cx="125" cy="75" r="2.5" fill="#ffb347" fillOpacity="0.7" />
-            </svg>
+        <h1 className="hero2__headline display">
+          {LINES.map((l, i) => (
+            <span key={l.text} data-hero-line={i} className="hero2__line">
+              <span className="hero2__mask">
+                <span data-hero-word className={`hero2__word ${l.cls}`}>{l.text}</span>
+              </span>
+            </span>
+          ))}
+        </h1>
+
+        <div data-hero-overlay className="hero2__bottom">
+          <div className="hero2__copy">
+            <p data-hero-fade className="hero2__sub">
+              Gate motors, CCTV, electric fencing and AJAX alarm systems — shop online, or send
+              TRF Tech an enquiry for a quote and expert advice, delivered across South Africa.
+            </p>
+            <div data-hero-cta className="hero2__actions">
+              <a href="#products" className="btn2 btn2--primary" data-magnetic
+                onClick={(e) => { e.preventDefault(); scrollToId('products') }}>
+                Shop security gear
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </a>
+              <a href="#enquiry" className="btn2 btn2--ghost" data-magnetic
+                onClick={(e) => { e.preventDefault(); scrollToId('enquiry') }}>
+                Send an enquiry
+              </a>
+            </div>
           </div>
+
+          <dl data-hero-fade className="hero2__stats">
+            <div>
+              <dt className="hud-label">Products online</dt>
+              <dd className="display" data-hero-count="500" data-suffix="+">500+</dd>
+            </div>
+            <div>
+              <dt className="hud-label">Years on watch</dt>
+              <dd className="display text-armed" data-hero-count="12">12</dd>
+            </div>
+          </dl>
         </div>
       </div>
 
-      <div className="hero-scroll">
-        Scroll
-        <div className="hero-scroll-line" />
+      {/* Revealed once the dome has reassembled as the logo */}
+      <div data-hero-brand className="hero2__brand" aria-hidden>
+        <p className="hero2__brand-name display" data-spacing="0.28em">TRF TECH</p>
+        <p className="hero2__brand-tag hud-label" data-spacing="0.32em">Security · Construction · Gas</p>
+      </div>
+
+      <div data-hero-fade className="hero2__scroll hud-label">
+        <span className="hero2__scroll-line" />
+        Scroll to arm
       </div>
     </section>
   )

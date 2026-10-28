@@ -2,10 +2,10 @@ import { useEffect } from 'react'
 import { sr } from '../../lib/scrollReveal'
 
 const STEPS = [
-  { num: 1, title: 'Security Audit', desc: 'Our technician assesses your property\'s vulnerabilities and recommends the optimal security solution.' },
-  { num: 2, title: 'System Design', desc: 'We create a detailed system layout, equipment list and cable plan tailored to your property.' },
-  { num: 3, title: 'Installation', desc: 'Our certified team installs and configures all equipment. Minimal disruption, neat cable runs.' },
-  { num: 4, title: 'Training & Handover', desc: 'We walk you through your new system and ensure you\'re fully confident before we leave.' },
+  { num: 1, title: 'Send an Enquiry', desc: 'Tell us about your property and what you want to protect — or send us your equipment list.' },
+  { num: 2, title: 'Expert Advice', desc: 'Our team recommends the right equipment for your property and budget, and answers any questions.' },
+  { num: 3, title: 'Your Quote', desc: 'You receive a clear, no-obligation quote with pricing and stock availability.' },
+  { num: 4, title: 'Order & Delivery', desc: 'Approve the quote and we get your equipment to you, anywhere in South Africa.' },
 ]
 
 export default function ProcessSection() {
@@ -18,7 +18,7 @@ export default function ProcessSection() {
       <div className="container">
         <div className="section-header">
           <div className="section-label">How We Work</div>
-          <h2 className="section-title">Installation <span>Process</span></h2>
+          <h2 className="section-title">Enquiry <span>Process</span></h2>
         </div>
         <div className="process-steps">
           {STEPS.map((s) => (

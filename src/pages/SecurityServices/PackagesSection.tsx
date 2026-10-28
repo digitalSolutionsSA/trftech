@@ -1,29 +1,31 @@
 import { useEffect } from 'react'
 import { sr } from '../../lib/scrollReveal'
+import { enquireAbout } from './ContactSection'
 
+// Equipment bundles to start a conversation from — supply only, priced per enquiry
 const PACKAGES = [
   {
-    name: '🔒 Essential',
-    desc: 'Perfect for small homes and apartments needing basic security coverage.',
-    price: 'R 3,999',
-    note: 'Once-off installation',
-    features: ['8-Zone alarm panel','2× PIR motion detectors','2× door/window contacts','Outdoor siren with strobe','Smartphone app integration','1-year workmanship guarantee'],
+    name: '🔒 Essential Kit',
+    desc: 'Basic alarm coverage for small homes and apartments.',
+    price: 'Price on enquiry',
+    note: 'Equipment kit — tailored to your property',
+    features: ['8-Zone alarm panel','2× PIR motion detectors','2× door/window contacts','Outdoor siren with strobe','Smartphone app control'],
     featured: false,
   },
   {
-    name: '🛡️ Advanced',
-    desc: 'The most popular choice — comprehensive coverage for medium residential and small commercial sites.',
-    price: 'R 8,999',
-    note: 'Once-off installation',
-    features: ['16-Zone alarm system','4× 4MP IP cameras + NVR','Gate motor installation','Electric fence (50m)','Access control keypad','Armed response integration','Remote monitoring setup','2-year workmanship guarantee'],
+    name: '🛡️ Advanced Kit',
+    desc: 'The most popular choice — comprehensive equipment for medium homes and small businesses.',
+    price: 'Price on enquiry',
+    note: 'Equipment kit — tailored to your property',
+    features: ['16-Zone alarm system','4× 4MP IP cameras + NVR','Gate motor kit','Electric fence energizer + 50m kit','Access control keypad','Armed-response compatible'],
     featured: true,
   },
   {
-    name: '🏢 Enterprise',
-    desc: 'Full commercial security solutions for offices, factories, estates and large properties.',
-    price: 'Custom',
-    note: 'Contact for quotation',
-    features: ['Unlimited zone alarm system','Up to 32 IP cameras','Biometric access control','Full perimeter electric fence','24/7 monitoring link','CCTV AI analytics','Dedicated account manager','3-year service contract'],
+    name: '🏢 Commercial',
+    desc: 'Larger systems for offices, factories, estates and big properties.',
+    price: 'Custom quote',
+    note: 'Volume and trade pricing available',
+    features: ['Unlimited-zone alarm system','Up to 32 IP cameras','Biometric access control','Full perimeter electric fence equipment','CCTV with AI analytics','Bulk / trade pricing'],
     featured: false,
   },
 ]
@@ -37,9 +39,9 @@ export default function PackagesSection() {
     <section id="packages" className="section" style={{ background: 'var(--bg)' }}>
       <div className="container">
         <div className="section-header">
-          <div className="section-label">Choose Your Plan</div>
-          <h2 className="section-title">Service <span>Packages</span></h2>
-          <p className="section-desc">Flexible packages for every property type and budget. All include a 12-month workmanship guarantee.</p>
+          <div className="section-label">Popular Kits</div>
+          <h2 className="section-title">Security <span>Kits</span></h2>
+          <p className="section-desc">Starting points for common properties. Every site is different, so send us an enquiry and we'll tailor the kit and quote you.</p>
         </div>
         <div className="pkg-grid">
           {PACKAGES.map((pkg) => (
@@ -61,8 +63,8 @@ export default function PackagesSection() {
                 ))}
               </ul>
               <a href="#contact" className={`btn btn-full ${pkg.featured ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={(e) => { e.preventDefault(); document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' }) }}>
-                Get Started
+                onClick={(e) => { e.preventDefault(); enquireAbout(pkg.name.replace(/^\S+\s/, '')) }}>
+                Enquire About This Kit
               </a>
             </div>
           ))}

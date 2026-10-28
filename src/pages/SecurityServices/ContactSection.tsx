@@ -1,5 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { showToast } from '../../components/Toast'
+import { submitEnquiry } from '../../lib/enquiries'
+
+const KIT_EVENT = 'trf:kit-enquiry'
+
+/** Scroll to the enquiry form with a kit already filled in (used by the kit cards). */
+export function enquireAbout(kit: string) {
+  window.dispatchEvent(new CustomEvent<string>(KIT_EVENT, { detail: kit }))
+  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
+}
 
 export default function ContactSection() {
   const [submitted, setSubmitted] = useState(false)
@@ -8,25 +17,40 @@ export default function ContactSection() {
   const [email, setEmail] = useState('')
   const [type, setType]   = useState('Residential Home')
   const [needs, setNeeds] = useState('')
+  const [sending, setSending] = useState(false)
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    const onKit = (e: Event) => setNeeds(`${(e as CustomEvent<string>).detail} — please quote`)
+    window.addEventListener(KIT_EVENT, onKit)
+    return () => window.removeEventListener(KIT_EVENT, onKit)
+  }, [])
+
+  const handleSubmit = async () => {
     if (!name || !phone || !email) { showToast('⚠️', 'Missing Details', 'Fill in your name, phone and email.'); return }
-    setSubmitted(true)
-    showToast('✅', 'Assessment Booked!', "We'll call within one business day.")
+    setSending(true)
+    try {
+      await submitEnquiry({ source: 'security', name, phone, email, property_type: type, service: 'Security enquiry', message: needs })
+      setSubmitted(true)
+      showToast('✅', 'Enquiry Sent!', "We'll get back to you within one business day.")
+    } catch {
+      showToast('⚠️', 'Not Sent', "Sorry, your enquiry didn't go through. Please try again.")
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
     <section id="contact" className="cta-section">
       <div className="container">
-        <div className="section-label">Free Assessment</div>
-        <h2 className="cta-title">Book a Free <span>Security Assessment</span></h2>
-        <p className="cta-desc">Our PSIRA-registered consultant will visit your property at no charge.</p>
+        <div className="section-label">Enquiries</div>
+        <h2 className="cta-title">Send a <span>Security Enquiry</span></h2>
+        <p className="cta-desc">Tell us what you need and our team will come back to you with advice and a no-obligation quote.</p>
 
         {submitted ? (
           <div className="quote-success">
             <div className="quote-success-icon">✅</div>
-            <h3>Assessment Booked!</h3>
-            <p>We will call you within one business day to confirm your appointment.</p>
+            <h3>Enquiry Sent!</h3>
+            <p>We'll get back to you within one business day with advice and a quote.</p>
           </div>
         ) : (
           <div className="quote-form-card">
@@ -40,10 +64,10 @@ export default function ContactSection() {
                   {['Residential Home','Apartment','Small Business','Commercial / Industrial','Estate / Cluster'].map((t) => <option key={t}>{t}</option>)}
                 </select>
               </div>
-              <div className="form-group full"><label className="form-label">What security do you need?</label><input className="form-input" value={needs} onChange={(e) => setNeeds(e.target.value)} placeholder="E.g. cameras, alarm, gate motor..." /></div>
+              <div className="form-group full"><label className="form-label">What do you need?</label><input className="form-input" value={needs} onChange={(e) => setNeeds(e.target.value)} placeholder="E.g. 4 cameras + NVR, AJAX alarm kit, gate motor..." /></div>
             </div>
-            <button className="btn btn-primary btn-full" style={{ marginTop: 20, fontSize: '1rem', padding: 14 }} onClick={handleSubmit}>
-              🛡️ Book Free Assessment
+            <button className="btn btn-primary btn-full" style={{ marginTop: 20, fontSize: '1rem', padding: 14 }} onClick={handleSubmit} disabled={sending}>
+              {sending ? 'Sending…' : '🛡️ Send Enquiry'}
             </button>
           </div>
         )}

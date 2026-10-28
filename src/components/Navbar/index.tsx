@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useCartStore } from '../../store/cartStore'
 import { useThemeStore } from '../../store/themeStore'
 import Logo from '../Logo'
+import { scrollToId } from '../../lib/lenis'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -22,7 +23,7 @@ export default function Navbar() {
   const scrollTo = (id: string) => {
     closeMenu()
     navigate('/')
-    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 120)
+    setTimeout(() => scrollToId(id), 120)
   }
 
   return (
@@ -30,14 +31,15 @@ export default function Navbar() {
       <nav className={`navbar${scrolled ? ' scrolled' : ''}`}>
         <div className="navbar-inner">
           <Link to="/" className="navbar-logo" onClick={closeMenu}>
-            <Logo />
+            <Logo wide light={theme === 'light'} />
           </Link>
 
           <ul className="navbar-links">
             <li><NavLink to="/" end onClick={closeMenu}>Home</NavLink></li>
             <li><a role="button" onClick={() => scrollTo('products')}>Shop</a></li>
-            <li><a role="button" onClick={() => scrollTo('services')}>Services</a></li>
-            <li><a role="button" onClick={() => scrollTo('enquiry')}>Construction &amp; Gas</a></li>
+            <li><a role="button" onClick={() => scrollTo('specials')}>Specials</a></li>
+            <li><NavLink to="/security-services" onClick={closeMenu}>Services</NavLink></li>
+            <li><a role="button" onClick={() => scrollTo('enquiry')}>Enquire</a></li>
             <li><a role="button" onClick={() => scrollTo('features')}>About</a></li>
           </ul>
 
@@ -85,8 +87,9 @@ export default function Navbar() {
       <div className={`mobile-menu${menuOpen ? ' open' : ''}`}>
         <Link to="/" onClick={closeMenu}>Home</Link>
         <a role="button" onClick={() => scrollTo('products')}>Shop Products</a>
-        <a role="button" onClick={() => scrollTo('services')}>Security Services</a>
-        <a role="button" onClick={() => scrollTo('enquiry')}>Construction &amp; Gas</a>
+        <a role="button" onClick={() => scrollTo('specials')}>Specials</a>
+        <Link to="/security-services" onClick={closeMenu}>Security Services</Link>
+        <a role="button" onClick={() => scrollTo('enquiry')}>Enquire</a>
         <Link to="/cart" onClick={closeMenu}>
           Cart {count > 0 ? `(${count})` : ''}
         </Link>

@@ -23,16 +23,16 @@ export default function SecurityHero() {
       <div className="service-hero-overlay" style={{ background: 'radial-gradient(ellipse at 30% 50%, rgba(255,122,0,0.08) 0%, transparent 60%)' }} />
       <div className="service-hero-content">
         <div className="service-badge" style={{ background: 'rgba(255,122,0,0.08)', border: '1px solid rgba(255,122,0,0.28)', color: 'var(--primary)' }}>
-          🛡️ TRF Tech — Professional Security Division
+          🛡️ TRF Tech — Security Supply
         </div>
         <h1 className="service-hero-title">
-          Complete <span>Security</span><br />Installation &amp; Monitoring
+          Security <span>Equipment</span><br />Supply &amp; Advice
         </h1>
         <p className="service-hero-desc">
-          Professional installation, commissioning and maintenance of all security systems — alarms, CCTV cameras, access control and electric fencing — carried out by certified technicians.
+          Alarms, CCTV cameras, access control, gate motors and electric fencing from trusted brands. Tell us what you need to protect and we'll recommend the right equipment and send you a quote.
         </p>
         <div className="service-stats">
-          {[['1,500+','Sites Protected'],['24/7','Monitoring Available'],['PSIRA','Registered']].map(([n,l]) => (
+          {[['500+','Products Online'],['24/7','Product Support'],['SA-wide','Delivery']].map(([n,l]) => (
             <div key={l}>
               <div className="stat-num" style={{ color: 'var(--primary)' }}>{n}</div>
               <div className="stat-label">{l}</div>
@@ -40,8 +40,8 @@ export default function SecurityHero() {
           ))}
         </div>
         <div className="cta-buttons">
-          <a href="#packages" className="btn btn-primary" onClick={(e) => { e.preventDefault(); document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' }) }}>
-            View Packages →
+          <a href="#contact" className="btn btn-primary" onClick={(e) => { e.preventDefault(); document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' }) }}>
+            Send an Enquiry →
           </a>
           <Link to="/#products" className="btn btn-secondary">Shop Products</Link>
         </div>

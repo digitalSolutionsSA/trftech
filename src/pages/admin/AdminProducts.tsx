@@ -4,6 +4,7 @@ import { useAdminProducts, useCategories } from '../../hooks/useProducts'
 import { useAuth } from '../../hooks/useAuth'
 import ProductForm from '../../components/admin/ProductForm'
 import VariantsManager from '../../components/admin/VariantsManager'
+import AdminTabs from '../../components/admin/AdminTabs'
 import type { DbProduct, DbProductInsert } from '../../types'
 
 export default function AdminProducts() {
@@ -81,7 +82,7 @@ export default function AdminProducts() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#00d4ff' }}>TRF Tech</span>
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.9rem' }}>/ Admin / Products</span>
+          <AdminTabs />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>{user?.email}</span>

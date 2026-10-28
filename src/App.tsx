@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { useEffect, Suspense, lazy } from 'react'
+import { useEffect, useState, Suspense, lazy } from 'react'
 import Navbar from './components/Navbar'
 import PageLoader from './components/PageLoader'
 import ToastContainer from './components/Toast'
@@ -14,11 +14,11 @@ const SecurityServices = lazy(() => import('./pages/SecurityServices'))
 const Gas               = lazy(() => import('./pages/Gas'))
 const AdminLogin        = lazy(() => import('./pages/admin/AdminLogin'))
 const AdminProducts     = lazy(() => import('./pages/admin/AdminProducts'))
+const AdminEnquiries    = lazy(() => import('./pages/admin/AdminEnquiries'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
   useEffect(() => {
-    document.documentElement.classList.toggle('snap-scroll', pathname === '/')
     window.scrollTo(0, 0)
   }, [pathname])
   return null
@@ -26,11 +26,14 @@ function ScrollToTop() {
 
 function Layout() {
   const apply = useThemeStore((s) => s.apply)
+  const { pathname } = useLocation()
+  // Decided on first load only: the home page runs its own arming sequence instead
+  const [showLoader] = useState(pathname !== '/')
   useEffect(() => { apply() }, [apply])
 
   return (
     <>
-      <PageLoader />
+      {showLoader && <PageLoader />}
       <Navbar />
       <ScrollToTop />
       <Suspense fallback={null}>
@@ -54,6 +57,7 @@ function AdminLayout() {
       <Routes>
         <Route path="/"         element={<AdminLogin />} />
         <Route path="/products" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
+        <Route path="/enquiries" element={<ProtectedRoute><AdminEnquiries /></ProtectedRoute>} />
       </Routes>
     </Suspense>
   )

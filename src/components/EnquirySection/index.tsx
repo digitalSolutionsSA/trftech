@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { submitEnquiry } from '../../lib/enquiries'
 
 const OTHER_SERVICES = [
   {
@@ -20,26 +21,39 @@ const OTHER_SERVICES = [
 export default function EnquirySection() {
   const [form, setForm] = useState({ name: '', phone: '', service: '', message: '' })
   const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [failed, setFailed] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSent(true)
+    setSending(true)
+    setFailed(false)
+    try {
+      await submitEnquiry({ source: 'home', ...form })
+      setSent(true)
+      setForm({ name: '', phone: '', service: '', message: '' })
+    } catch {
+      setFailed(true)
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
     <section id="enquiry" className="enquiry-section">
       <div className="container">
-        <div className="section-header">
-          <div className="section-label">Other Services</div>
-          <h2 className="section-title">Construction &amp; <span>Gas</span></h2>
-          <p className="section-desc">
-            Beyond security, we offer expert construction and certified gas installation services. Request a free quote below.
+        <div className="sec-head">
+          <p className="hud-label eyebrow2"><span data-scramble>Enquiries // request a quote</span></p>
+          <h2 className="display sec-title" data-glitch>Send an <span className="text-armed">Enquiry</span></h2>
+          <p className="sec-sub" data-sr="rise" data-sr-delay="150">
+            Need a quote on security equipment, advice on the right system, or help with a construction or
+            gas project? Send us an enquiry and we'll get back to you.
           </p>
         </div>
 
         <div className="enq-layout">
           {/* Service cards */}
-          <div className="enq-cards">
+          <div className="enq-cards" data-sr-children="left" data-sr-interval="160">
             {OTHER_SERVICES.map((s) => (
               <div className="enq-card" key={s.title}>
                 <div className="enq-card-img-wrap">
@@ -65,7 +79,7 @@ export default function EnquirySection() {
           </div>
 
           {/* Quote form */}
-          <div className="enq-form-wrap">
+          <div className="enq-form-wrap" data-sr="right" data-sr-delay="120">
             {sent ? (
               <div className="enq-success">
                 <div className="enq-success-icon">✅</div>
@@ -104,6 +118,10 @@ export default function EnquirySection() {
                       onChange={(e) => setForm({ ...form, service: e.target.value })}
                     >
                       <option value="">Select a service...</option>
+                      <option>Security — Product Quote</option>
+                      <option>Security — AJAX Alarm Systems</option>
+                      <option>Security — Advice on a System</option>
+                      <option>Security — Bulk / Trade Order</option>
                       <option>Construction — Boundary Wall</option>
                       <option>Construction — Palisade Fencing</option>
                       <option>Construction — Carport</option>
@@ -117,13 +135,18 @@ export default function EnquirySection() {
                   <div className="enq-field">
                     <label>Message (optional)</label>
                     <textarea
-                      rows={3} placeholder="Tell us more about your project..."
+                      rows={3} placeholder="Tell us what you need — products, quantities or your project..."
                       value={form.message}
                       onChange={(e) => setForm({ ...form, message: e.target.value })}
                     />
                   </div>
-                  <button type="submit" className="btn btn-primary btn-full">
-                    Send Enquiry →
+                  {failed && (
+                    <p className="enq-error" role="alert">
+                      Sorry, your enquiry didn't go through. Please try again.
+                    </p>
+                  )}
+                  <button type="submit" className="btn btn-primary btn-full" disabled={sending}>
+                    {sending ? 'Sending…' : 'Send Enquiry →'}
                   </button>
                 </form>
               </>
