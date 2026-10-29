@@ -912,6 +912,41 @@ select option:disabled, select option[value=""] { color: var(--text-muted); }
   color: var(--text-muted); cursor: pointer; transition: var(--transition);
 }
 .ps-brand-chip:hover { border-color: var(--primary); color: var(--primary); }
+.ps-brand-chip { font-family: inherit; }
+.ps-brand-chip.active { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 700; }
+
+/* Search + sort toolbar */
+.ps-toolbar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.ps-search { flex: 1 1 260px; position: relative; display: flex; align-items: center; }
+.ps-search-icon { position: absolute; left: 14px; color: var(--text-muted); pointer-events: none; }
+.ps-search-input {
+  width: 100%; padding: 11px 38px 11px 40px; border-radius: var(--radius);
+  background: var(--input-bg); border: 1px solid var(--input-border);
+  color: var(--text); font-family: inherit; font-size: 0.88rem;
+  transition: var(--transition);
+}
+.ps-search-input::placeholder { color: var(--text-subtle); }
+.ps-search-input:focus { outline: none; border-color: var(--primary); box-shadow: var(--glow); }
+.ps-search-input::-webkit-search-cancel-button { display: none; }
+.ps-search-clear {
+  position: absolute; right: 8px; width: 26px; height: 26px; border-radius: 50%;
+  border: none; background: transparent; color: var(--text-muted);
+  font-size: 1.2rem; line-height: 1; cursor: pointer;
+}
+.ps-search-clear:hover { color: var(--primary); }
+.ps-sort { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.ps-sort-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); }
+.ps-sort-select {
+  padding: 10px 12px; border-radius: var(--radius);
+  background: var(--input-bg); border: 1px solid var(--input-border);
+  color: var(--text); font-family: inherit; font-size: 0.84rem; cursor: pointer;
+}
+.ps-sort-select:focus { outline: none; border-color: var(--primary); }
+.ps-sort-select option { background: var(--bg); color: var(--text); }
+.ps-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  text-align: center; padding: 4rem 1rem; color: var(--text-muted);
+}
 
 /* Mobile filter pills (hidden on desktop) */
 .ps-filter-pills { display: none; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }

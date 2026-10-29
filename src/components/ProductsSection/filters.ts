@@ -22,6 +22,37 @@ export const FILTERS: { key: FilterKey; label: string; icon: string; match: (p: 
   { key: 'construction',     label: 'Construction',     icon: '🏗️', match: inCategory('construction') },
 ]
 
+export const BRANDS = ['Centurion', 'Hikvision', 'Dahua', 'Nemtek', 'DSC', 'Paradox', 'Ajax', 'Gallagher']
+
+/** Brands aren't a column yet, so a product belongs to a brand when its name, tags or description say so. */
+export const matchesBrand = (p: DbProduct, brand: string) => {
+  const re = new RegExp(`\\b${brand}\\b`, 'i')
+  return re.test(p.name) || (p.tags ?? []).some((t) => re.test(t)) || re.test(p.description ?? '')
+}
+
+/** Every word typed has to appear somewhere in the product's name, category, tags or description. */
+export function matchesSearch(p: DbProduct, query: string) {
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
+  if (!terms.length) return true
+  const haystack = [p.name, p.categories?.name, ...(p.tags ?? []), p.description].filter(Boolean).join(' ').toLowerCase()
+  return terms.every((t) => haystack.includes(t))
+}
+
+/** Has stock itself, or on any of its active variants. */
+export const inStock = (p: DbProduct) =>
+  p.stock > 0 || (p.product_variants ?? []).some((v) => v.is_active && v.stock > 0)
+
+export type SortKey = 'relevance' | 'price-asc' | 'price-desc' | 'name' | 'rating'
+
+/** No comparator keeps the order the products arrive in (newest first). */
+export const SORTS: { key: SortKey; label: string; compare?: (a: DbProduct, b: DbProduct) => number }[] = [
+  { key: 'relevance',  label: 'Newest' },
+  { key: 'price-asc',  label: 'Price: low to high', compare: (a, b) => Number(a.price) - Number(b.price) },
+  { key: 'price-desc', label: 'Price: high to low', compare: (a, b) => Number(b.price) - Number(a.price) },
+  { key: 'name',       label: 'Name: A–Z',          compare: (a, b) => a.name.localeCompare(b.name) },
+  { key: 'rating',     label: 'Top rated',          compare: (a, b) => b.rating - a.rating },
+]
+
 const SHOP_EVENT = 'trf:shop-filter'
 
 /** Jump to the shop with a category already selected (used by the homepage tiles and ranges). */
