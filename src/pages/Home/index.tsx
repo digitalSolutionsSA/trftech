@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 import BootScreen from '../../components/BootScreen'
-import Cursor from '../../components/Cursor'
 import ScrollProgress from '../../components/ScrollProgress'
 import HeroSection from '../../components/HeroSection'
 import HomeIntro from '../../components/HomeIntro'
@@ -36,7 +35,6 @@ export default function Home() {
   return (
     <div ref={page} className="home">
       <BootScreen />
-      <Cursor />
       <ScrollProgress />
       {/* Kept short on purpose: hero, a line of welcome, then straight into specials and the shop.
           Services detail lives on /security-services rather than on the homepage. */}
