@@ -73,7 +73,12 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
       }
       await onSave(data, imageFile)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      // Supabase errors are plain objects (not Error instances) but carry a message
+      const msg =
+        err instanceof Error ? err.message
+        : err && typeof err === 'object' && 'message' in err ? String((err as { message: unknown }).message)
+        : 'Something went wrong'
+      setError(msg)
     } finally {
       setSaving(false)
     }

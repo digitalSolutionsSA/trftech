@@ -4,6 +4,22 @@ import type { DbProduct, DbProductInsert, DbProductUpdate, DbCategory, DbProduct
 
 const PRODUCT_SELECT = '*, categories(id,name,slug), product_variants(*)'
 
+// products.slug is UNIQUE in the DB. Two products with the same (or similar) name
+// would produce the same slug and the insert/update fails with 409 Conflict.
+// Find a free slug by appending -2, -3, ... (ignoring the product being edited).
+async function uniqueSlug(base: string, excludeId?: string): Promise<string> {
+  const root = base || 'product'
+  let q = supabase.from('products').select('id, slug').like('slug', `${root}%`)
+  if (excludeId) q = q.neq('id', excludeId)
+  const { data, error } = await q
+  if (error) throw error
+  const taken = new Set((data ?? []).map((r) => r.slug))
+  if (!taken.has(root)) return root
+  let n = 2
+  while (taken.has(`${root}-${n}`)) n++
+  return `${root}-${n}`
+}
+
 function sortVariants(product: DbProduct): DbProduct {
   if (!product.product_variants) return product
   return { ...product, product_variants: [...product.product_variants].sort((a, b) => a.sort_order - b.sort_order) }
@@ -46,9 +62,10 @@ export function useAdminProducts() {
   useEffect(() => { fetch() }, [fetch])
 
   const create = async (product: DbProductInsert) => {
+    const slug = await uniqueSlug(product.slug)
     const { data, error } = await supabase
       .from('products')
-      .insert(product)
+      .insert({ ...product, slug })
       .select(PRODUCT_SELECT)
       .single()
     if (error) throw error
@@ -57,9 +74,10 @@ export function useAdminProducts() {
   }
 
   const update = async (id: string, product: DbProductUpdate) => {
+    const payload = product.slug ? { ...product, slug: await uniqueSlug(product.slug, id) } : product
     const { data, error } = await supabase
       .from('products')
-      .update(product)
+      .update(payload)
       .eq('id', id)
       .select(PRODUCT_SELECT)
       .single()
