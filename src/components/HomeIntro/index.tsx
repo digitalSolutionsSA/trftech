@@ -33,9 +33,9 @@ const TILES: Tile[] = [
     run: () => scrollToId('enquiry'),
   },
   {
-    label: 'Construction', sub: 'Build & renovate',
-    icon: icon(<><path d="M2 20h20" /><path d="M5 20V8l7-5 7 5v12" /><path d="M9 20v-6h6v6" /></>),
-    to: '/construction',
+    label: 'TRF Science', sub: 'Lab supplies & equipment',
+    icon: icon(<><path d="M9 2h6" /><path d="M10 2v7L4.5 19a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L14 9V2" /><path d="M7 15h10" /></>),
+    to: '/trf-science',
   },
   {
     label: 'Gas', sub: 'Supply & installs',

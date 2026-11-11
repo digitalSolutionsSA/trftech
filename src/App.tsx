@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect, useState, Suspense, lazy } from 'react'
 import Navbar from './components/Navbar'
 import PageLoader from './components/PageLoader'
@@ -9,7 +9,7 @@ import { useThemeStore } from './store/themeStore'
 
 const Cart             = lazy(() => import('./pages/Cart'))
 const Checkout         = lazy(() => import('./pages/Checkout'))
-const Construction     = lazy(() => import('./pages/Construction'))
+const TrfScience       = lazy(() => import('./pages/TrfScience'))
 const SecurityServices = lazy(() => import('./pages/SecurityServices'))
 const Gas               = lazy(() => import('./pages/Gas'))
 const AdminLogin        = lazy(() => import('./pages/admin/AdminLogin'))
@@ -41,7 +41,9 @@ function Layout() {
           <Route path="/"                   element={<Home />} />
           <Route path="/cart"               element={<Cart />} />
           <Route path="/checkout"           element={<Checkout />} />
-          <Route path="/construction"       element={<Construction />} />
+          <Route path="/trf-science"        element={<TrfScience />} />
+          {/* Old address: keep existing links and search results working */}
+          <Route path="/construction"       element={<Navigate to="/trf-science" replace />} />
           <Route path="/security-services"  element={<SecurityServices />} />
           <Route path="/gas"                element={<Gas />} />
         </Routes>

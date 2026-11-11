@@ -2,12 +2,16 @@ import type { DbProduct } from '../../types'
 import { scrollToId } from '../../lib/lenis'
 
 export type FilterKey =
-  | 'all' | 'ajax' | 'gate-motors' | 'cameras' | 'electric-fencing' | 'alarm-systems' | 'networking' | 'construction'
+  | 'all' | 'ajax' | 'gate-motors' | 'cameras' | 'electric-fencing' | 'alarm-systems' | 'networking' | 'trf-science'
 
 const isAjax = (p: DbProduct) =>
   p.categories?.slug === 'ajax' || /\bajax\b/i.test(p.name) || (p.tags ?? []).some((t) => /\bajax\b/i.test(t))
 
 const inCategory = (slug: string) => (p: DbProduct) => p.categories?.slug === slug
+
+// TRF Science covers its own category plus its four sub-section categories
+const SCIENCE_SLUGS = ['trf-science', 'lab-supplies', 'lab-equipment', 'chemicals', 'glassware']
+const isScience = (p: DbProduct) => SCIENCE_SLUGS.includes(p.categories?.slug ?? '')
 
 export const FILTERS: { key: FilterKey; label: string; icon: string; match: (p: DbProduct) => boolean }[] = [
   { key: 'all',              label: 'All Products',     icon: '🛍️', match: () => true },
@@ -19,7 +23,7 @@ export const FILTERS: { key: FilterKey; label: string; icon: string; match: (p: 
   { key: 'electric-fencing', label: 'Electric Fencing', icon: '⚡', match: inCategory('electric-fencing') },
   { key: 'alarm-systems',    label: 'Alarm Systems',    icon: '🔔', match: inCategory('alarm-systems') },
   { key: 'networking',       label: 'Networking',       icon: '🌐', match: inCategory('networking') },
-  { key: 'construction',     label: 'Construction',     icon: '🏗️', match: inCategory('construction') },
+  { key: 'trf-science',      label: 'TRF Science',      icon: '🔬', match: isScience },
 ]
 
 export const BRANDS = ['Centurion', 'Hikvision', 'Dahua', 'Nemtek', 'DSC', 'Paradox', 'Ajax', 'Gallagher']

@@ -3,11 +3,11 @@ import { submitEnquiry } from '../../lib/enquiries'
 
 const OTHER_SERVICES = [
   {
-    icon: '🏗️',
-    title: 'Construction Services',
-    desc: 'Boundary walls, palisade fencing, carports, site preparation and full commercial builds — by our certified construction team.',
-    items: ['Boundary Walls', 'Palisade Fencing', 'Carports', 'Site Setup', 'Commercial Builds'],
-    img: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80&auto=format&fit=crop',
+    icon: '🔬',
+    title: 'TRF Science',
+    desc: 'Lab supplies, lab equipment, chemicals and glassware for schools, universities, industry and research labs.',
+    items: ['Lab Supplies', 'Lab Equipment', 'Chemicals', 'Glassware'],
+    img: 'https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=600&q=80&auto=format&fit=crop',
   },
   {
     icon: '🔥',
@@ -46,7 +46,7 @@ export default function EnquirySection() {
           <p className="hud-label eyebrow2"><span data-scramble>Enquiries // request a quote</span></p>
           <h2 className="display sec-title" data-glitch>Send an <span className="text-armed">Enquiry</span></h2>
           <p className="sec-sub" data-sr="rise" data-sr-delay="150">
-            Need a quote on security equipment, advice on the right system, or help with a construction or
+            Need a quote on security equipment, advice on the right system, or lab supplies from TRF Science, or a
             gas project? Send us an enquiry and we'll get back to you.
           </p>
         </div>
@@ -122,10 +122,10 @@ export default function EnquirySection() {
                       <option>Security — AJAX Alarm Systems</option>
                       <option>Security — Advice on a System</option>
                       <option>Security — Bulk / Trade Order</option>
-                      <option>Construction — Boundary Wall</option>
-                      <option>Construction — Palisade Fencing</option>
-                      <option>Construction — Carport</option>
-                      <option>Construction — Other</option>
+                      <option>TRF Science — Lab Supplies</option>
+                      <option>TRF Science — Lab Equipment</option>
+                      <option>TRF Science — Chemicals</option>
+                      <option>TRF Science — Glassware</option>
                       <option>Gas — Geyser Installation</option>
                       <option>Gas — Stove / Hob</option>
                       <option>Gas — Bulk Storage</option>

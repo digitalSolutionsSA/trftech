@@ -209,7 +209,7 @@ export default function HeroSection() {
       {/* Revealed once the dome has reassembled as the logo */}
       <div data-hero-brand className="hero2__brand" aria-hidden>
         <p className="hero2__brand-name display" data-spacing="0.28em">TRF TECH</p>
-        <p className="hero2__brand-tag hud-label" data-spacing="0.32em">Security · Construction · Gas</p>
+        <p className="hero2__brand-tag hud-label" data-spacing="0.32em">Security · Science · Gas</p>
       </div>
 
       <div data-hero-fade className="hero2__scroll hud-label">

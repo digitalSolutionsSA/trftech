@@ -20,10 +20,10 @@ const SECURITY_SERVICES = [
     img: 'https://images.unsplash.com/photo-1558882224-dda166733046?w=800&q=80&auto=format&fit=crop',
   },
   {
-    title: 'Construction',
-    desc: 'Design and installation of electric perimeter fences with alarm integration and compliance certificates.',
-    tags: ['Perimeter', 'Alarm Link', 'CoC Cert', 'SANS 10222'],
-    img: 'https://images.unsplash.com/photo-1549109926-9620d1b9bfa2?w=800&q=80&auto=format&fit=crop',
+    title: 'TRF Science',
+    desc: 'Lab supplies, lab equipment, chemicals and glassware for schools, universities, industry and research labs.',
+    tags: ['Lab Supplies', 'Lab Equipment', 'Chemicals', 'Glassware'],
+    img: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=800&q=80&auto=format&fit=crop',
   },
 ]
 

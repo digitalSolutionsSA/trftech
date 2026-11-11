@@ -27,7 +27,7 @@ export default function Footer() {
             <ul className="footer-links">
               <li><Link to="/#products">→ All Products</Link></li>
               <li><Link to="/#services">→ Services</Link></li>
-              <li><Link to="/construction">→ Construction</Link></li>
+              <li><Link to="/trf-science">→ TRF Science</Link></li>
               <li><Link to="/security-services">→ Security Services</Link></li>
               <li><Link to="/gas">→ Gas Solutions</Link></li>
             </ul>
