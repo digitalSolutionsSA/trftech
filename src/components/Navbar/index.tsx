@@ -39,6 +39,7 @@ export default function Navbar() {
             <li><a role="button" onClick={() => scrollTo('products')}>Shop</a></li>
             <li><a role="button" onClick={() => scrollTo('specials')}>Specials</a></li>
             <li><NavLink to="/security-services" onClick={closeMenu}>Services</NavLink></li>
+            <li><NavLink to="/trf-science" onClick={closeMenu}>TRF Science</NavLink></li>
             <li><a role="button" onClick={() => scrollTo('enquiry')}>Enquire</a></li>
             <li><a role="button" onClick={() => scrollTo('features')}>About</a></li>
           </ul>
@@ -89,6 +90,7 @@ export default function Navbar() {
         <a role="button" onClick={() => scrollTo('products')}>Shop Products</a>
         <a role="button" onClick={() => scrollTo('specials')}>Specials</a>
         <Link to="/security-services" onClick={closeMenu}>Security Services</Link>
+        <Link to="/trf-science" onClick={closeMenu}>TRF Science</Link>
         <a role="button" onClick={() => scrollTo('enquiry')}>Enquire</a>
         <Link to="/cart" onClick={closeMenu}>
           Cart {count > 0 ? `(${count})` : ''}
