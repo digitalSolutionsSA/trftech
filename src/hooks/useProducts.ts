@@ -120,6 +120,16 @@ export function useAdminProducts() {
     return refreshProduct(variant.product_id)
   }
 
+  // Insert several variants at once (used by the Add/Edit Product form)
+  const createVariants = async (productId: string, variants: Omit<DbProductVariantInsert, 'product_id'>[]) => {
+    if (!variants.length) return
+    const { error } = await supabase
+      .from('product_variants')
+      .insert(variants.map((v) => ({ ...v, product_id: productId })))
+    if (error) throw error
+    return refreshProduct(productId)
+  }
+
   const updateVariant = async (id: string, productId: string, variant: DbProductVariantUpdate) => {
     const { error } = await supabase.from('product_variants').update(variant).eq('id', id)
     if (error) throw error
@@ -134,7 +144,7 @@ export function useAdminProducts() {
 
   return {
     products, loading, error, create, update, remove, uploadImage, refetch: fetch,
-    createVariant, updateVariant, removeVariant,
+    createVariant, createVariants, updateVariant, removeVariant,
   }
 }
 

@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAdminProducts, useCategories } from '../../hooks/useProducts'
 import { useAuth } from '../../hooks/useAuth'
-import ProductForm from '../../components/admin/ProductForm'
+import ProductForm, { type DraftVariant } from '../../components/admin/ProductForm'
 import VariantsManager from '../../components/admin/VariantsManager'
 import AdminTabs from '../../components/admin/AdminTabs'
 import type { DbProduct, DbProductInsert } from '../../types'
 
 export default function AdminProducts() {
   const { user, signOut } = useAuth()
-  const { products, loading, error, create, update, remove, uploadImage, createVariant, updateVariant, removeVariant } = useAdminProducts()
+  const { products, loading, error, create, update, remove, uploadImage, createVariant, createVariants, updateVariant, removeVariant } = useAdminProducts()
   const { categories } = useCategories()
   const navigate = useNavigate()
 
@@ -28,18 +28,22 @@ export default function AdminProducts() {
     setTimeout(() => setToast(''), 3000)
   }
 
-  const handleSave = async (data: DbProductInsert, imageFile?: File) => {
+  const handleSave = async (data: DbProductInsert, imageFile?: File, variants: DraftVariant[] = []) => {
     let finalData = data
     if (imageFile) {
       const url = await uploadImage(imageFile)
       finalData = { ...data, image_url: url }
     }
+    const startOrder = editing?.product_variants?.length ?? 0
+    const variantRows = variants.map((v, i) => ({ ...v, image_url: null, sort_order: startOrder + i, is_active: true }))
     if (editing) {
       await update(editing.id, finalData)
+      await createVariants(editing.id, variantRows)
       showToast('Product updated successfully')
     } else {
-      await create(finalData)
-      showToast('Product added successfully')
+      const created = await create(finalData)
+      await createVariants(created.id, variantRows)
+      showToast(variants.length ? `Product added with ${variants.length} variants` : 'Product added successfully')
     }
     setModal(null)
     setEditing(null)

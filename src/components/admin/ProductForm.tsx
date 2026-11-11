@@ -1,12 +1,30 @@
 import { useState, FormEvent, useRef } from 'react'
 import type { DbProduct, DbProductInsert, DbCategory } from '../../types'
 
+export interface DraftVariant {
+  label: string
+  price: number
+  compare_at_price: number | null
+  stock: number
+}
+
+interface VariantRowState {
+  key: number
+  label: string
+  price: string
+  compareAt: string
+  stock: string
+}
+
 interface Props {
   product?: DbProduct | null
   categories: DbCategory[]
-  onSave: (data: DbProductInsert, imageFile?: File) => Promise<void>
+  onSave: (data: DbProductInsert, imageFile?: File, variants?: DraftVariant[]) => Promise<void>
   onCancel: () => void
 }
+
+let rowKey = 0
+const emptyRow = (): VariantRowState => ({ key: ++rowKey, label: '', price: '', compareAt: '', stock: '0' })
 
 const GRADIENTS = [
   'linear-gradient(135deg,rgba(0,212,255,0.14),rgba(0,100,200,0.14))',
@@ -39,6 +57,14 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+  const [variantRows, setVariantRows] = useState<VariantRowState[]>([])
+  const existingVariantCount = product?.product_variants?.length ?? 0
+  const hasVariants = variantRows.length > 0
+
+  const updateRow = (key: number, field: keyof Omit<VariantRowState, 'key'>, value: string) =>
+    setVariantRows((rows) => rows.map((r) => (r.key === key ? { ...r, [field]: value } : r)))
+  const removeRow = (key: number) => setVariantRows((rows) => rows.filter((r) => r.key !== key))
+  const addRow = () => setVariantRows((rows) => [...rows, emptyRow()])
 
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -50,14 +76,35 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+
+    // Ignore completely blank variant rows; every other row needs a label and price.
+    const filledRows = variantRows.filter((r) => r.label.trim() || r.price || r.compareAt)
+    for (const r of filledRows) {
+      if (!r.label.trim()) { setError('Each variant needs a label, e.g. "1m" or "5m"'); return }
+      if (!r.price || isNaN(parseFloat(r.price))) { setError(`Set a price for variant "${r.label.trim()}"`); return }
+    }
+    const variants: DraftVariant[] = filledRows.map((r) => ({
+      label: r.label.trim(),
+      price: parseFloat(r.price),
+      compare_at_price: r.compareAt ? parseFloat(r.compareAt) : null,
+      stock: parseInt(r.stock) || 0,
+    }))
+    if (!variants.length && (!price || isNaN(parseFloat(price)))) { setError('Set a price, or add variants with their own prices'); return }
+    // Price/stock summary across existing (when editing) + new variants
+    const allVariants = [
+      ...(variants.length ? (product?.product_variants ?? []).map((v) => ({ price: Number(v.price), stock: v.stock })) : []),
+      ...variants,
+    ]
+
     setSaving(true)
     try {
       const data: DbProductInsert = {
         name,
         slug: slugify(name),
         description: description || null,
-        price: parseFloat(price),
-        compare_at_price: compareAt ? parseFloat(compareAt) : null,
+        // With variants, the product's own price/stock act as "from" price and total stock.
+        price: variants.length ? Math.min(...allVariants.map((v) => v.price)) : parseFloat(price),
+        compare_at_price: variants.length ? null : compareAt ? parseFloat(compareAt) : null,
         category_id: categoryId || null,
         icon,
         image_url: imageUrl || null,
@@ -66,12 +113,12 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
         review_count: product?.review_count ?? 0,
         badge: badge || null,
         badge_class: badgeClass || null,
-        stock: parseInt(stock) || 0,
+        stock: variants.length ? allVariants.reduce((s, v) => s + v.stock, 0) : parseInt(stock) || 0,
         is_active: isActive,
         is_featured: isFeatured,
-        tags: [],
+        tags: product?.tags ?? [],
       }
-      await onSave(data, imageFile)
+      await onSave(data, imageFile, variants)
     } catch (err: unknown) {
       // Supabase errors are plain objects (not Error instances) but carry a message
       const msg =
@@ -109,16 +156,57 @@ export default function ProductForm({ product, categories, onSave, onCancel }: P
         />
       </Field>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-        <Field label="Price (R) *">
-          <input style={inp} type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required placeholder="0.00" />
-        </Field>
-        <Field label="Compare-at Price (R)">
-          <input style={inp} type="number" min="0" step="0.01" value={compareAt} onChange={(e) => setCompareAt(e.target.value)} placeholder="Old price" />
-        </Field>
-        <Field label="Stock">
-          <input style={inp} type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="0" />
-        </Field>
+      {!hasVariants && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+          <Field label="Price (R) *">
+            <input style={inp} type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" />
+          </Field>
+          <Field label="Compare-at Price (R)">
+            <input style={inp} type="number" min="0" step="0.01" value={compareAt} onChange={(e) => setCompareAt(e.target.value)} placeholder="Old price" />
+          </Field>
+          <Field label="Stock">
+            <input style={inp} type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="0" />
+          </Field>
+        </div>
+      )}
+
+      {/* Variants: e.g. a cable sold in 1m / 5m / 10m lengths, each with its own price and stock */}
+      <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '0.9rem', background: 'rgba(255,255,255,0.02)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: hasVariants ? 10 : 0 }}>
+          <div>
+            <div style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 600 }}>
+              Variants {existingVariantCount > 0 && <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>({existingVariantCount} existing)</span>}
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginTop: 2 }}>
+              {product
+                ? existingVariantCount > 0
+                  ? 'Edit or remove existing variants with the Variants button in the product list. Add more below.'
+                  : 'Sell this product in different sizes/lengths, e.g. 1m, 5m, 10m — each with its own price.'
+                : 'Sell this product in different sizes/lengths, e.g. 1m, 5m, 10m — each with its own price.'}
+            </div>
+          </div>
+          <button type="button" onClick={addRow} style={ghostBtn}>+ Add Variant</button>
+        </div>
+
+        {hasVariants && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: variantGrid, gap: 8, color: 'rgba(255,255,255,0.45)', fontSize: '0.7rem', fontWeight: 500 }}>
+              <span>Label *</span><span>Price (R) *</span><span>Was (R)</span><span>Stock</span><span />
+            </div>
+            {variantRows.map((r) => (
+              <div key={r.key} style={{ display: 'grid', gridTemplateColumns: variantGrid, gap: 8, alignItems: 'center' }}>
+                <input style={inp} value={r.label} onChange={(e) => updateRow(r.key, 'label', e.target.value)} placeholder="e.g. 5m" />
+                <input style={inp} type="number" min="0" step="0.01" value={r.price} onChange={(e) => updateRow(r.key, 'price', e.target.value)} placeholder="0.00" />
+                <input style={inp} type="number" min="0" step="0.01" value={r.compareAt} onChange={(e) => updateRow(r.key, 'compareAt', e.target.value)} placeholder="Optional" />
+                <input style={inp} type="number" min="0" value={r.stock} onChange={(e) => updateRow(r.key, 'stock', e.target.value)} placeholder="0" />
+                <button type="button" onClick={() => removeRow(r.key)} title="Remove variant" style={{ ...ghostBtn, padding: '0.5rem 0.7rem', color: '#f87171', borderColor: 'rgba(248,113,113,0.3)' }}>✕</button>
+              </div>
+            ))}
+            <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.72rem' }}>
+              Shoppers choose a variant on the product card. The product shows "From R…" using the lowest variant price.
+            </div>
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -250,6 +338,8 @@ const inp: React.CSSProperties = {
   outline: 'none',
   boxSizing: 'border-box',
 }
+
+const variantGrid = '1.4fr 1fr 1fr 0.8fr auto'
 
 const optSel: React.CSSProperties = {
   background: '#1a1a2e',
